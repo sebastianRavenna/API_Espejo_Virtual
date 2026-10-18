@@ -24,7 +24,8 @@ Lo opera Sebastian (Raven-Net); al inicio la digitalización es un servicio manu
 - **Fase:** 0 — Spike técnico, en curso. **Primer día cumplido.**
 - **Hecho:** el repo original está copiado en `widget/` (MIT declarada solo en el README, ADR-023) y corre por HTTPS con certificado autofirmado (ADR-024; comandos en `04-desarrollo.md`). `sun_glasses.glb` reemplaza al modelo procedural, en mm y con origen en el puente, con escala calibrada por iris (ADR-025). Además: video y anteojo sincronizados, color de la cámara corregido y oclusor de cabeza. Sebastian lo probó con cámara en la PC y en el celular: "perfecto". Los GLB de prueba quedan fuera del repo (ADR-026).
 - **Límites conocidos:** de perfil completo el anteojo desaparece (MediaPipe pierde la cara); las patillas pasan por delante de la oreja y del pelo (backlog); se ve algo "sticker" por las lentes opacas del modelo y la falta de sombra.
-- **Esperando a Sebastian:** inicializar git y hacer el primer commit; abrir el issue de `LICENSE` en el repo original. Pendiente nuevo: P-13 (el spike es JS + React + CRA, no TS + Vite). Quedan 10 pendientes en `07-decisiones.md`.
+- **Repo:** https://github.com/sebastianRavenna/API_Espejo_Virtual (rama `main`; primer commit `15b0fa0`, 2026-10-18).
+- **Esperando a Sebastian:** abrir el issue de `LICENSE` en el repo original. Pendiente nuevo: P-13 (el spike es JS + React + CRA, no TS + Vite). Quedan 10 pendientes en `07-decisiones.md`.
 
 ## 4. Próximos tres pasos
 1. Cargar los otros dos GLB (acetato grueso y metálico fino) con su spec de correcciones, y anotar qué hubo que corregir en cada uno para el script de Blender.

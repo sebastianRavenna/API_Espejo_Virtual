@@ -53,7 +53,8 @@ Registro cronológico por sesión. La entrada más nueva va arriba.
 - Revisado cuadro por cuadro: sigue bien en giros, inclinaciones y cabeceos, sin cambios de tamaño y sin que asome la patilla de atrás. **El objetivo del primer día de la Fase 0 está cumplido.**
 
 **Pendiente**
-- Sebastian: inicializar git y hacer el primer commit (`node_modules/` y los GLB ya están en `.gitignore`); probar desde el celular (Chrome Android y, si hay, Safari iOS) y con la cámara de la PC girando la cabeza; abrir el issue de `LICENSE` en el repo original.
+- ~~Inicializar git y hacer el primer commit~~: hecho. Sebastian creó el repo vacío en GitHub y Claude inicializó git (rama `main`), hizo el primer commit (`15b0fa0`, 44 archivos, sin `node_modules` ni GLB) y lo subió. `gh` no está instalado, por eso la creación del repo la hizo Sebastian.
+- Sebastian: probar desde el celular (Chrome Android y, si hay, Safari iOS) y con la cámara de la PC girando la cabeza; abrir el issue de `LICENSE` en el repo original.
 - Ajustar los offsets de `CFG` (2 mm adelante y 2 mm abajo) con la cámara real.
 - Sugerencia menor: el `.gitignore` del original ignora `package-lock.json`. Para builds reproducibles conviene commitearlo; se decide con el primer commit.
 

@@ -4,7 +4,7 @@ El spike arrancó el 2026-10-18: el código está en `widget/`. Lo demás combin
 
 ## Estructura del repo
 
-Esta carpeta es la raíz del repo. Sebastian la sube a GitHub. El código del spike va en `widget/` (ADR-020). El resto de la estructura es una propuesta:
+Esta carpeta es la raíz del repo: https://github.com/sebastianRavenna/API_Espejo_Virtual (rama `main`). El código del spike va en `widget/` (ADR-020). El resto de la estructura es una propuesta:
 
 ```
 /
