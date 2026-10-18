@@ -1,0 +1,18 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "widget",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "widget", "start"],
+      "port": 3000,
+      "url": "https://localhost:3000"
+    },
+    {
+      "name": "widget-http",
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": ["/c", "set HTTPS=false&& set PORT=3001&& npm --prefix widget start"],
+      "port": 3001
+    }
+  ]
+}

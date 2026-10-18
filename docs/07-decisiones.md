@@ -1,0 +1,216 @@
+# 07 — Registro de decisiones (ADR)
+
+Cada entrada tiene fecha, decisión, contexto, alternativas descartadas y consecuencias. Las entradas del 2026-10-18 marcadas "(plan)" se tomaron en `docs/source/plan-espejo-virtual.md` y se registran acá como punto de partida.
+
+Para revertir una decisión hay que hacerlo explícitamente: se agrega una entrada nueva que la reemplaza, y la vieja se marca "Reemplazada por ADR-XXX". Si Sebastian decide contra una objeción de Claude, la objeción queda anotada en la entrada.
+
+---
+
+### ADR-001 · Procesamiento de video solo en el navegador (plan)
+- **Fecha:** 2026-10-18
+- **Decisión:** el tracking, el oclusor, el render 3D y la DP corren en el navegador del cliente final. Nunca se sube video ni imágenes de la cara a un servidor.
+- **Contexto:** privacidad del cliente final y costo: el servidor solo sirve JSON y estáticos, y eso entra en capas gratuitas.
+- **Alternativas descartadas:** procesamiento en servidor (costo de cómputo, riesgo legal por datos biométricos).
+- **Consecuencias:** el rendimiento depende del dispositivo del usuario; los términos de servicio pueden afirmar que no se suben imágenes; el backend es mínimo.
+
+### ADR-002 · Dos líneas de ingreso; el costo de generación 3D lo paga la óptica (plan)
+- **Fecha:** 2026-10-18
+- **Decisión:** abono mensual (espejo, visor 360, DP, métricas, hosting) más un cargo único por marco digitalizado. El costo de generar el 3D se traslada dentro de ese cargo.
+- **Contexto:** la digitalización tiene costo variable (API y tiempo); el abono cubre el costo fijo.
+- **Alternativas descartadas:** abono único que incluya digitalización ilimitada (el costo crece con el catálogo y no con el ingreso).
+- **Consecuencias:** la oferta muestra los dos conceptos separados. Los precios están `TBD`.
+
+### ADR-003 · Alta con 3 a 5 marcos digitalizados sin cargo (plan)
+- **Fecha:** 2026-10-18
+- **Decisión:** el alta incluye 3 a 5 marcos gratis para que la óptica vea el espejo con sus anteojos antes de decidir.
+- **Contexto:** la venta se cierra cuando la óptica se ve con su propio catálogo.
+- **Alternativas descartadas:** demo solo con marcos genéricos.
+- **Consecuencias:** el tenant en `trial` debe ver su catálogo en el widget (ver ADR-018).
+
+### ADR-004 · Digitalización manual al inicio, con formulario (plan)
+- **Fecha:** 2026-10-18
+- **Decisión:** al inicio digitaliza Sebastian (servicio manual). La óptica entrega fotos y medidas por un formulario mínimo, nunca por WhatsApp. El esquema no distingue quién carga; solo cambian los permisos RLS.
+- **Contexto:** validar calidad y demanda antes de automatizar.
+- **Alternativas descartadas:** pipeline automatizado desde el día uno; recibir material por WhatsApp (se pierde, no tiene estructura ni trazabilidad).
+- **Consecuencias:** una tarde por óptica del piloto. La Fase 4 (automatizar) solo se hace cuando la carga manual se vuelva un problema real de tiempo.
+
+### ADR-005 · Supabase como proyecto nuevo dentro de la organización paga (plan)
+- **Fecha:** 2026-10-18
+- **Decisión:** base de datos y auth en un proyecto Supabase propio, dentro de la organización paga existente. Es el único costo fijo aceptado (USD 10/mes).
+- **Contexto:** separar datos y cupos de otros proyectos de Raven-Net sin pagar otra organización.
+- **Alternativas descartadas:** reutilizar un proyecto existente (mezcla datos y RLS); un backend propio (costo y mantenimiento).
+- **Consecuencias:** el panel habla directo con Postgres bajo RLS; Auth viene incluido.
+
+### ADR-006 · Assets 3D en Cloudflare R2, nunca en Supabase Storage (plan)
+- **Fecha:** 2026-10-18
+- **Decisión:** los GLB, las texturas, las miniaturas y las fotos fuente van a R2 con dominio propio. En Postgres solo se guarda la URL.
+- **Contexto:** R2 no cobra egreso; los GLB se descargan en cada prueba.
+- **Alternativas descartadas:** Supabase Storage (egreso cobrado).
+- **Consecuencias:** las bajas de tenants requieren borrar los objetos de R2 a mano o por script (ver `06-mantenimiento.md`).
+
+### ADR-007 · Endpoint público en Cloudflare Workers, cacheado (plan)
+- **Fecha:** 2026-10-18
+- **Decisión:** el widget no habla con Supabase. Un Worker valida clave, dominio y estado y devuelve el catálogo cacheado.
+- **Contexto:** capa gratuita de 100k req/día; aislar la base del tráfico público.
+- **Alternativas descartadas:** que el widget consulte Supabase directo con la clave `anon`.
+- **Consecuencias:** cómo se escriben los eventos de métricas sigue abierto (P-04).
+
+### ADR-008 · Multi-tenant con RLS; la óptica es dueña de sus registros (plan)
+- **Fecha:** 2026-10-18
+- **Decisión:** cada registro pertenece a un `tenant_id` y RLS se activa desde la primera migración. La óptica lee lo suyo. Al inicio solo el operador escribe en `frames`; en la Fase 4 se abre la escritura con un cambio de política, no de esquema.
+- **Contexto:** evitar migraciones de seguridad posteriores.
+- **Alternativas descartadas:** single-tenant o RLS "después".
+- **Consecuencias:** hace falta definir cómo se identifica al operador (P-08).
+
+### ADR-009 · Ningún modelo 3D se publica sin revisión humana (plan)
+- **Fecha:** 2026-10-18
+- **Decisión:** un `frame` solo pasa a `ready` cuando un humano lo revisó en el espejo. Lo mismo vale en la Fase 4 con la cola de revisión.
+- **Contexto:** la calidad de la IA varía (metálicos finos, transparentes) y un modelo malo daña la venta de la óptica.
+- **Alternativas descartadas:** publicación automática.
+- **Consecuencias:** el tiempo de revisión es un costo del operador y entra en el precio por marco.
+
+### ADR-010 · La DP se presenta como estimación (plan)
+- **Fecha:** 2026-10-18
+- **Decisión:** "DP estimada", siempre con aviso. Nunca se presenta como medición clínica.
+- **Contexto:** la precisión típica con iris de 11,7 mm es de 1–2 mm.
+- **Alternativas descartadas:** venderla como medición.
+- **Consecuencias:** los textos del widget y los términos de servicio lo dicen explícitamente.
+
+### ADR-011 · Licenciamiento por clave + dominios + estado (plan)
+- **Fecha:** 2026-10-18
+- **Decisión:** clave por tenant, whitelist de dominios y estado de suscripción. Si el tenant no está habilitado, el catálogo vuelve vacío. No hace falta más protección.
+- **Contexto:** sin marcos, el widget no sirve; el valor está en los modelos y el servicio.
+- **Alternativas descartadas:** ofuscación o DRM del widget.
+- **Consecuencias:** la clave es pública en el HTML (ver la nota de seguridad en `02-arquitectura.md`).
+
+### ADR-012 · Esquema mínimo de 3 tablas para el piloto (plan)
+- **Fecha:** 2026-10-18
+- **Decisión:** solo `tenants`, `frames` y `try_on_events`. Pagos, cupos y roles se agregan cuando exista la primera factura.
+- **Contexto:** no diseñar facturación antes de saber cuánto paga una óptica.
+- **Alternativas descartadas:** esquema completo de SaaS desde el inicio.
+- **Consecuencias:** el panel completo (Fase 3) espera a que las tablas estén cerradas.
+
+### ADR-013 · Cobro por transferencia y activación manual; MercadoPago con más de cinco clientes (plan)
+- **Fecha:** 2026-10-18
+- **Decisión:** al principio se cobra por transferencia y se activa a mano. Las suscripciones de MercadoPago llegan con más de cinco clientes.
+- **Contexto:** no vale la pena automatizar el cobro de pocos clientes.
+- **Alternativas descartadas:** pasarela automática desde el día uno.
+- **Consecuencias:** `tenants.status` se cambia a mano.
+
+### ADR-014 · Competir por mercado local, no por tecnología (plan; revisar, ver P-09)
+- **Fecha:** 2026-10-18
+- **Decisión:** posicionamiento local (español, WordPress/WooCommerce, MercadoPago, servicio de digitalización), no superioridad técnica.
+- **Contexto:** Fittingbox y Jeeliz tienen años de ventaja tecnológica; Jeeliz tiene un plan gratuito en Shopify.
+- **Alternativas descartadas:** competir en realismo o en catálogo.
+- **Consecuencias:** **la investigación del 2026-10-18 muestra que "español" y "WooCommerce" ya los cubren Fittingbox y Auglio.** La decisión sigue en pie, pero los argumentos se revisan en P-09.
+
+### ADR-015 · Realismo: escala en mm, origen en el puente, lentes planos, oclusor (plan)
+- **Fecha:** 2026-10-18
+- **Decisión:** modelos escalados en mm con calibre-puente-patilla, origen en el puente (X sien, Y arriba, Z adelante), lentes reemplazados por dos superficies planas de vidrio, oclusor facial que solo escribe profundidad.
+- **Contexto:** es la diferencia entre "sticker" y "natural".
+- **Alternativas descartadas:** usar la geometría de lentes de la IA; escalar a ojo.
+- **Consecuencias:** las tres medidas son obligatorias en el formulario; el script de Blender las necesita.
+
+### ADR-016 · El spike parte de `alperenuzun/basic-virtual-tryon-glasses`; build con Vite (plan)
+- **Fecha:** 2026-10-18
+- **Decisión:** se parte de ese repo (TypeScript, MediaPipe, Three.js, con oclusor). Vite lo empaqueta como un solo `widget.js` con Shadow DOM.
+- **Contexto:** ahorra semanas de base técnica.
+- **Alternativas descartadas:** empezar de cero.
+- **Consecuencias:** hay que revisar la licencia del repo al clonarlo (resuelto en ADR-023). Dónde vive el código es P-06.
+- **Nota (2026-10-18):** el repo original no es TypeScript: es JavaScript con React 16 y react-scripts 3.4. El plan lo describía mal. La migración queda como P-13.
+
+### ADR-017 · Orden de trabajo y diseño (plan)
+- **Fecha:** 2026-10-18
+- **Decisión:** spike → flujos y esquema → piloto → producto vendible → pipeline automatizado. La UI del panel se diseña con Claude Design recién con las tablas cerradas (Fase 3). La UI del widget se hace en código sobre el canvas 3D, no en mockups.
+- **Contexto:** no diseñar sobre supuestos.
+- **Alternativas descartadas:** diseñar el panel primero.
+- **Consecuencias:** el panel de la Fase 2 es mínimo y funcional.
+
+### ADR-018 · Los tenants en `trial` también reciben catálogo
+- **Fecha:** 2026-10-18 (esta sesión; aprobada por Sebastian)
+- **Decisión:** la vista o función pública expone marcos `ready` de tenants con `status in ('trial','active')`. Solo `suspended` devuelve vacío.
+- **Contexto:** el plan decía "tenants activos", lo que contradecía el período de prueba con 3 a 5 marcos gratis (ADR-003) y el piloto sin pago (Fase 2).
+- **Alternativas descartadas:** solo `active` (rompe el trial); un estado `pilot` aparte (innecesario).
+- **Consecuencias:** falta definir cuánto dura el `trial` y quién lo pasa a `suspended` al vencer (`TBD`, hoy a mano).
+
+### ADR-019 · Esta carpeta es la raíz del repo; los documentos originales van a `docs/source/`
+- **Fecha:** 2026-10-18 (esta sesión)
+- **Decisión:** `C:\Archivos\Trabajos\API Espejo Virtual` es la raíz del repo; Sebastian lo inicializa y lo sube a GitHub. El plan, el prompt inicial y las instrucciones se mueven a `docs/source/` como referencia congelada; la fuente de verdad viva es `docs/`.
+- **Contexto:** separar el material de origen de la documentación que se mantiene.
+- **Alternativas descartadas:** dejarlos en la raíz (se confunden con los documentos vivos).
+- **Consecuencias:** si el plan y `docs/` divergen, manda `docs/`.
+
+### ADR-020 · El código del spike vive en `widget/` dentro de este repo (resuelve P-06)
+- **Fecha:** 2026-10-18 (esta sesión; decidida por Sebastian)
+- **Decisión:** el código de `alperenuzun/basic-virtual-tryon-glasses` se copia en `widget/` de este repo, manteniendo su licencia y el crédito al autor original. Ese código evoluciona hasta ser el `widget.js` del producto.
+- **Contexto:** el spike no es descartable; es la base del widget.
+- **Alternativas descartadas:** un repo separado o un fork (dos repos que mantener; después hay que mudar el código).
+- **Consecuencias:** hay que verificar la licencia del repo original antes de copiarlo. Los cambios que publique el original no llegan solos; se traen a mano si interesan.
+
+### ADR-021 · Estáticos en Cloudflare Pages (resuelve P-01)
+- **Fecha:** 2026-10-18 (esta sesión; decidida por Sebastian)
+- **Decisión:** `widget.js` y el panel se publican en Cloudflare Pages, plan gratuito.
+- **Contexto:** Sebastian tiene Vercel Pro, que también serviría (permite uso comercial). Se eligió Pages por costo cero verificado y porque el Worker y R2 ya están en Cloudflare: un solo proveedor para dominio, DNS, estáticos, endpoint y assets. Además, el producto no depende de mantener Vercel Pro por otros motivos.
+- **Verificado el 2026-10-18** ([docs de Cloudflare](https://developers.cloudflare.com/pages/functions/pricing/)): "On both free and paid plans, requests to static assets are free and unlimited". Límites del plan gratuito: 500 builds por mes, 25 MiB por archivo, 20.000 archivos por sitio.
+- **Alternativas descartadas:** Vercel Pro (costo extra cero hoy, pero ata el producto a una suscripción ajena al proyecto).
+- **Consecuencias:** las Pages Functions, si se usaran, consumen el cupo de Workers. Para el endpoint se usa el Worker (ADR-007).
+
+### ADR-022 · `frames.kind` usa `sun | reading` (resuelve P-05)
+- **Fecha:** 2026-10-18 (esta sesión; decidida por Sebastian)
+- **Decisión:** los valores de `frames.kind` son `sun` y `reading`. En pantalla se muestran "Sol" y "Lectura".
+- **Contexto:** el resto de los valores del esquema (`status`, `model_status`, `event`) ya están en inglés. No lo exige la regla del proyecto, que solo cubre nombres; es una cuestión de coherencia.
+- **Alternativas descartadas:** `sol | lectura`, como estaba en el plan.
+- **Consecuencias:** la primera migración usa `check (kind in ('sun','reading'))`.
+
+### ADR-023 · Se copia el spike con la licencia MIT declarada en el README
+- **Fecha:** 2026-10-18 (sesión Fase 0 día 1; decidida por Sebastian)
+- **Decisión:** se copió `alperenuzun/basic-virtual-tryon-glasses` (commit `a1413d5`) en `widget/`, sin historial git, tomando como permiso la declaración "License: MIT" de su README. El texto MIT con la atribución a Alperen Uzun y la aclaración quedan en `widget/LICENSE-UPSTREAM.md`; el crédito, en `widget/README.md`.
+- **Contexto:** el repo **no trae archivo `LICENSE`** y GitHub lo reporta "sin licencia". El README sí dice MIT (badge y sección). Sin el archivo no hay titular ni año.
+- **Excluido de la copia:** `public/js/gsap.min.js` (licencia propia de GreenSock, no MIT) y `public/js/jquery-3.4.1.min.js`, que se cargaban pero ningún archivo usaba; y `public/obj/*` (modelos sin licencia ni procedencia, que el código no cargaba).
+- **Alternativas descartadas:** frenar hasta que el autor agregue el archivo (parar el spike por un riesgo bajo).
+- **Consecuencias:** **tarea de Sebastian:** abrir un issue en el repo original pidiendo que agreguen el `LICENSE`. Si el autor contestara otra cosa, hay que revisar esta decisión antes de vender.
+
+### ADR-024 · HTTPS local con el certificado autofirmado de react-scripts
+- **Fecha:** 2026-10-18 (sesión Fase 0 día 1)
+- **Decisión:** el dev server corre con `HTTPS=true` (en `widget/.env.development`), que hace que react-scripts genere solo un certificado autofirmado. Escucha en `0.0.0.0`, así que el celular entra por `https://<IP-LAN>:3000`. No se agregó ninguna dependencia.
+- **Contexto:** sin HTTPS no hay cámara, y desde el celular `localhost` no aplica.
+- **Alternativas descartadas:** `mkcert` (certificado confiable, sin aviso; pero es una herramienta nueva y en el celular hay que instalar su CA a mano); túnel tipo `cloudflared` o `ngrok` (servicio externo, el video sigue local pero la página pasa por un tercero).
+- **Consecuencias:** cada dispositivo muestra un aviso de "conexión no privada" que hay que aceptar una vez. Funciona en Chrome de escritorio; **falta verificar en Chrome Android y Safari iOS**. Si Safari iOS no da cámara con el certificado autofirmado, la siguiente opción es `mkcert` (pedir OK). Al pasar a Vite (P-13) hay que rehacer esto.
+
+### ADR-025 · En el spike, la escala sale del iris y el puente se apoya en el landmark 168
+- **Fecha:** 2026-10-18 (sesión Fase 0 día 1)
+- **Decisión:** el modelo se dibuja en mm reales (ADR-015) y se convierte a píxeles con una regla: diámetro medio del iris (11,7 mm), medido con los landmarks 469–477, mediana de 15 frames. Si no hay landmarks de iris, se usa el ancho de cara (234–454) como 140 mm. El origen del modelo (puente) se ubica en el landmark 168, 2 mm hacia adelante y 2 mm hacia abajo (`CFG` en `constants.js`).
+- **Contexto:** el repo original escalaba un modelo procedural relativo al ancho de la cara en píxeles, con un factor a ojo (1,22). Con eso un marco de 52-18-140 no se ve de su tamaño real, que es justamente lo que ADR-015 quiere evitar.
+- **Alternativas descartadas:** seguir con el ancho de cara (varía más entre personas que el iris: ±7 % contra ±4 % aprox.).
+- **Consecuencias:** la DP (próxima sesión) va a usar la misma regla; conviene que sea una sola función. Los offsets de 2 mm están puestos a ojo sobre una foto fija: hay que ajustarlos con la cámara real.
+- **Ajuste tras la prueba con cámara real (2026-10-18):** con la mediana de 15 frames sobre px/mm, el anteojo tardaba en seguir el acercamiento y "respiraba" (se agrandaba y achicaba). Ahora el iris calibra el **ancho de cara de la persona en mm**, que no cambia con la distancia (mediana de 30 frames), y la escala de cada frame sale del ancho de cara en píxeles de ese frame (landmarks 234–454), sin demora. El puente se subió 3 mm (`bridgeDropMm` de 2 a −1) porque quedaba bajo.
+- **Segundo ajuste (2026-10-18):** al girar la cabeza el ancho de mejilla a mejilla se acorta y el anteojo se achicaba. Ahora el iris calibra dos medidas de la persona: ancho de cara (234–454) y alto de la parte superior de la cara (10–2, frente a debajo de la nariz; no depende de la mandíbula). Se calibra solo con la cara de frente. En cada frame se toma la mayor de las dos escalas: girar acorta el ancho, cabecear acorta el alto, y ninguno de los dos alarga.
+
+### ADR-026 · Los GLB de prueba no van al repo (resuelve P-14)
+- **Fecha:** 2026-10-18 (sesión Fase 0 día 1; decidida por Sebastian)
+- **Decisión:** `models-dev/` y `widget/public/models-dev/` están en el `.gitignore` de la raíz. `widget/README.md` lista cada GLB de prueba con su autor, su licencia y el enlace de descarga. El dev server los lee de `widget/public/models-dev/`.
+- **Contexto:** son fixtures de desarrollo descargados de Sketchfab (CC-BY-4.0); pesan ~7 MB y quedarían para siempre en el historial de git.
+- **Objeción de Claude (anotada):** Claude recomendaba commitear solo los 3 de referencia, porque así el spike es reproducible. Sin ellos en el repo, cada persona necesita una cuenta de Sketchfab, y una descarga distinta del mismo modelo puede romper las correcciones de su spec (unidades, rotación, puente), que dependen del archivo exacto.
+- **Alternativas descartadas:** commitearlos; Git LFS (herramienta nueva); bucket de R2 de desarrollo (R2 todavía no existe).
+- **Consecuencias:** después de clonar, el widget no muestra anteojo hasta que se bajen los GLB. Para detectar una descarga distinta, la consola muestra el tamaño en mm al cargar.
+
+---
+
+## Pendientes de decisión
+
+| ID | Tema | Opciones | Recomendación de Claude | Bloquea |
+|---|---|---|---|---|
+| ~~P-01~~ | ~~Hosting de estáticos~~ | **Resuelto → ADR-021 (Cloudflare Pages)** | | |
+| P-02 | Generación 3D | Hunyuan3D en Colab/Kaggle / Tripo o Hunyuan por API | Decidir con el resultado de la prueba de la Fase 0. Colab y Kaggle cuestan tiempo de Sebastian; la API cuesta plata trasladable. | Fase 2 |
+| P-03 | Dominio del producto | — (el plan usa `cdn.tuproducto.com`) | Elegir nombre comercial y dominio antes de la Fase 1. Tiene costo anual de registro: es un costo fijo que el plan no menciona. | Fase 1 (dominio de R2 y CDN) |
+| P-04 | Escritura de `try_on_events` y credencial del Worker | (a) `POST /v1/events` en el mismo Worker con service role como secreto; (b) función `security definer` llamada con `anon` | (a), agrupando eventos en el cliente (batch) para no gastar el cupo de 100k req/día. | Fase 1–2 (métricas del piloto) |
+| ~~P-05~~ | ~~Valores de `frames.kind`~~ | **Resuelto → ADR-022 (`sun / reading`)** | | |
+| ~~P-06~~ | ~~Dónde vive el código del spike~~ | **Resuelto → ADR-020 (`widget/` en este repo)** | | |
+| P-07 | Compresión de GLB y texturas | Draco / meshopt · KTX2 / WebP | Decidir en el spike midiendo peso y tiempo de carga en el celular. | Fase 0 |
+| P-08 | Cómo identifica RLS al operador | claim `app_metadata.role` / UID fijo en una función / tabla de roles | Claim en `app_metadata`: no agrega tablas (respeta ADR-012). | Fase 1 |
+| P-09 | Argumento comercial frente a la competencia | Ver `01-analisis.md` → Competencia | Apoyarse en pesos, MercadoPago, digitalización local y DP incluida; dejar de vender "español + WooCommerce" como diferencial. | Fase 2 (antes de ofrecer el piloto) |
+| P-10 | Cómo sube el formulario las fotos a R2 | URL prefirmada emitida por el Worker / subida a través del Worker | URL prefirmada: el archivo no pasa por el Worker. Definir también si el formulario requiere login. | Fase 2 |
+| P-11 | Dónde corre Blender headless en la Fase 4 | Máquina de Sebastian procesando una cola / servicio de cómputo pago | Sin decidir hasta la Fase 4. Un Cloudflare Worker no puede correr Blender. | Fase 4 |
+| P-12 | Respaldos de base y R2 | Backups del plan Supabase / `pg_dump` periódico · copia local de GLB aprobados | Verificar qué incluye el plan de la organización antes de agregar nada. | Antes del primer cliente pago |
+| P-13 | El spike no está en el stack documentado | El repo original es **JavaScript + React 16 + react-scripts 3.4 (webpack 4) + three 0.113 (2020)**, no TypeScript + Vite. Opciones: (a) migrar a TypeScript + Vite sin React al empaquetar `widget.js`; (b) migrar ahora; (c) seguir con CRA y React | (a): el motor (`src/engine/`) solo depende de three y se porta casi tal cual; React solo maneja la pantalla de carga y los botones. Migrar ya frena el spike; quedarse con CRA es heredar 1850 paquetes viejos. | Tarea de empaquetado con Vite (Fase 0) |
+| ~~P-14~~ | ~~Dónde viven los GLB de prueba~~ | **Resuelto → ADR-026 (fuera del repo, lista de descargas)** | | |
