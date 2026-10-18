@@ -33,8 +33,8 @@ export const FACE_OVAL = [
  * Each ring is centre + 4 points; opposite points give the iris diameter.
  */
 export const IRIS = {
-    leftRight: 469, leftTop: 470, leftLeft: 471, leftBottom: 472,
-    rightRight: 474, rightTop: 475, rightLeft: 476, rightBottom: 477
+    leftCenter: 468, leftRight: 469, leftTop: 470, leftLeft: 471, leftBottom: 472,
+    rightCenter: 473, rightRight: 474, rightTop: 475, rightLeft: 476, rightBottom: 477
 };
 
 /**
@@ -53,5 +53,16 @@ export const CFG = {
     glassesScale: 1.0,      // 1 = true size; only for experiments
     // Invisible head ellipsoid (mm, bridge frame). radiusX stays under the
     // temples' half spacing (~62–78 mm) so the near temple is never hidden.
-    headOccluder: { radiusX: 64, radiusY: 110, radiusZ: 92, centerY: 20, centerZ: -100 }
+    headOccluder: { radiusX: 64, radiusY: 110, radiusZ: 92, centerY: 20, centerZ: -100 },
+    // PD estimate (ADR-027): median of valid frames, looking at the camera, close enough
+    pd: {
+        frames: 45,         // valid frames to collect (~1.5 s at 30 fps)
+        timeoutMs: 10000,   // give up if not enough valid frames in this time
+        minIrisPx: 20,      // iris diameter in px; at 12 px one px of noise moved the PD 4–5 mm
+        maxEyeTilt: 0.12,   // stricter than the scale calibration: PD needs a frontal face
+        maxSpreadMm: 2,     // max spread (25th–75th percentile) of the frames to accept a result
+        // Convergence correction (near → far PD)
+        pupilToRotationMm: 10,  // pupil to the eye's centre of rotation
+        cameraFovDeg: 65        // assumed field of view across the image's long side (webcams ~60–78°)
+    }
 };

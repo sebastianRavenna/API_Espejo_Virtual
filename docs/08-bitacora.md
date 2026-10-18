@@ -4,6 +4,70 @@ Registro cronológico por sesión. La entrada más nueva va arriba.
 
 ---
 
+## 2026-10-18 — Sesión 2 (continuación): otros dos marcos y DP
+
+**Qué se hizo**
+- Se identificaron los dos GLB que faltaban renderizándolos en un visor temporal (ya borrado): `glasses.glb` (Marius.Eder) es **acetato negro grueso**, y `glasses (1).glb` (Lamis) es **metálico fino al aire**, con lentes verdosas. En `widget/public/models-dev/` se renombraron `acetate.glb` y `metal.glb`; la lista de descargas de `widget/README.md` usa esos nombres.
+- Specs de corrección (tabla en `04-desarrollo.md`): el de acetato viene en decímetros y es coherente. El metálico tiene **unidades incoherentes** (frente 18,5 contra patilla 14,6): se escaló por el frente a 140 mm y las patillas quedan cortas. Es el caso que justifica escalar con calibre-puente-patilla (ADR-015). Verificado con los vértices: los tres miden 140 mm de frente, el puente queda en el origen y ninguno choca con el oclusor de cabeza (margen 2 % en los dos nuevos, contra 18 % en el de sol).
+- Selector de marco: botones "Sol", "Acetato" y "Metal". Cada GLB se baja la primera vez que se elige y queda en memoria. El nuevo toma la pose del anterior, así que no salta.
+- **DP estimada** (ADR-027): botón "Medir DP" con indicaciones mientras mide, resultado en mm y el aviso de ADR-010.
+- UI: los botones bajan de línea en pantallas angostas (antes se salían del borde en el celular).
+
+**No verificado:** nada de esto se pudo probar con cámara desde Claude Code; compila y la UI se ve bien sin video.
+
+**Prueba con cámara de acetato, metal y DP (video de 41 s y capturas)**
+- Acetato: bien de tamaño y posición, probablemente el más convincente. Al mirar abajo, las dos patillas (naranjas) suben por delante del pelo en las sienes: el límite de pelo y orejas, más visible por el grosor y el color.
+- Metal: bien; las lentes verdosas con transparencia ayudan. Los extremos de las patillas se ven un poco sobre el pelo al girar.
+- El tracking no se movió de la cara de Sebastian con otra persona pasando por detrás.
+- **DP de Sebastian: nuestra app 58 mm; PDMeasure (también escala por iris) 58,2 de lejos y 55,2 de cerca; Auglio, que es lo que hoy tiene la óptica del piloto, 63–64.** No hay DP medida por un óptico, así que no se sabe cuál acierta.
+- **El anteojo se vio "proporcionado" en la cara de Sebastian y en la de su hijo, más chica.** Con escala real (ADR-015) un marco de 140 mm debería verse grande en un chico, así que la regla del iris puede estar adaptándose a la cara. Dos hipótesis: (1) el modelo de iris de MediaPipe estima el tamaño del iris en proporción a la cara (un "a priori" aprendido), y entonces la regla no mide la persona; (2) el iris real de Sebastian es más grande que 11,7 mm (el rango adulto va de ~11 a ~12,5 mm), lo que bajaría su DP y agrandaría el anteojo en su cara. Las dos hipótesis invalidan la "precisión de 1 a 2 mm" que dice el plan: la sola variación del iris entre personas da ±2–3 mm.
+- Se agregó un modo diagnóstico (`?debug=1`) que muestra el diámetro del iris en px, el ancho y el alto de cara calibrados en mm y la escala en px/mm.
+
+**Segunda prueba con `?debug=1` (capturas de Sebastian y su hijo, adolescente)**
+- Los números del recuadro de diagnóstico no salen en la grabación (solo se graba el canvas); faltan para cerrar la hipótesis de la regla.
+- DP del hijo: 66, 62, 59 y 62 mm en cuatro mediciones; la de Sebastian, estable en 58 si está cerca. El hijo estaba más lejos de la cámara: el iris medía unos 12–14 px y un píxel de ruido mueve la DP 4–5 mm. Cambios en ADR-027: cámara a 1280×720, iris mínimo de 20 px, rechazo de mediciones dispersas (> 2 mm) e indicaciones en pantalla según la causa.
+
+**Números de diagnóstico (texto copiado por Sebastian)**
+- Sebastian: iris 15,8 px · ancho de cara 143 mm (205 px) · alto superior 110 mm · 1,57 px/mm.
+- Hijo (adolescente): iris 19,7 px · ancho de cara 145 mm (243 px) · alto superior 106 mm · 1,68 px/mm.
+- La app calibra a los dos con casi el mismo ancho de cara: eso explica que el anteojo se vea igual de proporcionado. No se sabe si es real, porque a esa edad la cara ya tiene casi el tamaño adulto. **No alcanza para confirmar ni descartar la hipótesis 1.**
+- El iris de Sebastian (15,8 px) es chico para una cámara de 1280×720. Puede que la webcam no la soporte y entregue 640×480. Se agregó la resolución real al recuadro de diagnóstico.
+- Nota: el "alto superior" sale ~110 mm (el landmark 10 está cerca del nacimiento del pelo). El valor de respaldo de 75 mm en `CFG.faceHeightMm` es bajo, pero solo se usa sin landmarks de iris.
+
+**Prueba decisiva propuesta: tarjeta de 85,6 mm.** Una tarjeta tamaño ISO (SUBE, débito, DNI; mostrando el dorso, sin datos a la vista) mide siempre 85,6 mm de ancho. Apoyada plana contra la frente, de frente a la cámara y con `?debug=1` abierto, una captura de pantalla completa permite comparar el ancho de la tarjeta en píxeles con la escala de la app y con la distancia entre pupilas. Así se obtiene la DP y el ancho de cara reales, sin depender del iris. Si la tarjeta confirma que la regla del iris falla, la alternativa es calibrar con tarjeta, que es el método clásico de las apps de DP; costo: un paso más para el usuario.
+
+**Tercera ronda de diagnóstico**
+- Cámara confirmada a 1280×720. DP de Sebastian 59,3 mm con dispersión 1,5 mm: pasa el control de estabilidad y coincide con las mediciones anteriores (58–59). Es **estable**; falta saber si es **exacta**.
+- Sebastian preguntó cómo ve la app la tarjeta: no la detecta. Se agregó al modo diagnóstico una **verificación con tarjeta**: botón "Congelar", dos clics en los bordes de la tarjeta, y la app compara la escala de la tarjeta (85,6 mm) con la del iris y muestra la DP y el ancho de cara calculados con cada una.
+
+**Prueba con tarjeta (Sebastian, captura completa)**
+- Resultado: tarjeta 232 px → 2,71 px/mm; iris 2,33 px/mm (−14 % contra la tarjeta). Con la tarjeta: DP 51,9 mm y cara de 119 mm; con el iris: DP 60,4 mm y cara de 139 mm.
+- **La prueba no es concluyente.** DP 51,9 y cara de 119 mm son valores muy raros en un adulto. La causa es la perspectiva: a ~40 cm de la cámara, la tarjeta estaba sostenida delante de la frente y la frente ya está 1,5–2 cm por delante de las pupilas. Cada centímetro de diferencia agranda la tarjeta ~2,5 %, y el 14 % observado equivale a tener la tarjeta 5–6 cm más cerca de la cámara que los ojos.
+- Lección para producto: calibrar con tarjeta en la cámara del usuario **también** es frágil. Exige la tarjeta apoyada en la frente, más distancia a la cámara y una corrección por la profundidad de la frente. No es una solución automática al problema del iris.
+- Bug corregido en el modo diagnóstico: las marcas de los clics se dibujaban relativas a la ventana y, con la página scrolleada, aparecían sobre el título. La medición no estaba afectada: los clics cayeron en los bordes de la tarjeta. Ahora las marcas son relativas a la imagen, y la conversión de píxeles contempla `object-fit: cover`.
+- Sebastian aclaró que la tarjeta estaba **apoyada en la frente**. Corrección por perspectiva: la frente está 15–20 mm por delante de las pupilas; con una webcam de 60–70° de ángulo horizontal a 1280×720 (f ≈ 900–1100 px), la distancia era de 35–43 cm, y la tarjeta se ve 4–5,5 % más grande que en el plano de los ojos. Escala corregida: 2,56–2,60 px/mm; pupilas a 141 px → **DP de 54–55 mm**, que no cambia con ninguna combinación de los supuestos.
+- Quedan tres valores para la DP de Sebastian: **tarjeta corregida 54–55 mm · iris (app y PDMeasure) 58–60 mm · Auglio 63–64 mm.** Si la tarjeta acierta, la regla del iris le da un 9 % de más (iris real de ~10,7 mm, dentro del rango normal). Pero 54–55 mm es bajo para un hombre adulto (media ~64), así que tampoco se toma como verdad.
+- **Conclusión:** la DP de la app es estable (58–60 mm en Sebastian); si hay error, es sistemático. Ninguna prueba casera puede validar cuál valor es exacto. La única referencia útil es la medición de un óptico: ~55 → hay que ajustar la regla del iris; ~59 → la regla está bien; ~64 → hay que entender qué usa Auglio.
+
+**Segunda prueba con tarjeta (mejor apoyada) y comparación con PDMeasure**
+- Nuestra app: tarjeta 3,09 px/mm, iris 2,87 px/mm (−7 %; la primera prueba había dado −14 %). DP sin corregir: tarjeta 54,7 mm, iris 58,8 mm. Con la corrección por perspectiva (frente 15–20 mm delante de las pupilas, distancia 32–39 cm), la DP con tarjeta queda en **57,3–57,7 mm**: coincide con el iris en 1–1,5 mm (~2 %). La primera prueba con tarjeta fue la excepción.
+- PDMeasure con tarjeta: falló, porque sus marcadores quedaron sobre los ojos y no en la tarjeta (informa 69 mm de diferencia). Mostró su resultado por iris: 58,1 mm.
+- Valores de Sebastian: tarjeta corregida 57,3–57,7 · nuestro iris 58,8 · PDMeasure 58,1 · **Auglio 63–64 (solo)**.
+- **Sesgo de convergencia (error nuestro):** al mirar la cámara a ~35 cm los ojos convergen y las pupilas se acercan. La app mide DP de cerca a esa distancia, no DP de lejos, que es la que informan los ópticos. Con la pupila ~10 mm delante del centro de giro del ojo, la diferencia es ≈ 10 × DP / distancia ≈ 1,5–2 mm. DP de lejos estimada de Sebastian: **~60,5 mm**, y la brecha con Auglio baja de 5–6 mm a ~3 mm.
+- Propuesta: corregir la convergencia antes de la Fase 5 (ADR-027 la había postergado). La distancia sale de la escala y de un ángulo de visión supuesto para la cámara; un error del 15 % en la distancia mueve la corrección ~0,3 mm.
+
+**Corrección de convergencia implementada (aprobada por Sebastian)**
+- La app muestra la DP de lejos (ADR-027). Verificado con los datos de Sebastian: 58,8 → 60,5 mm; con un ángulo de visión de la cámara de 60° a 78°, el resultado queda entre 60,3 y 60,9. La cuenta inversa devuelve la medición original. Con `?debug=1` se ven la DP de cerca medida, la de lejos y la distancia estimada.
+- Panorama de Sebastian, en DP de lejos: nuestra app ~60,5 mm · Auglio 63–64 mm. La validación final sigue siendo la medición de un óptico.
+
+**Próxima prueba propuesta (sin costo):** con `?debug=1`, anotar el ancho de cara calibrado de Sebastian y de su hijo; con una regla, medir el ancho real de cara de los dos (de pómulo a pómulo, a la altura de las orejas). Si el ancho calibrado sale parecido en los dos, se confirma la hipótesis 1. Para la DP, la única referencia válida es una medición del óptico (pupilómetro o regla), que la óptica del piloto puede hacer en un minuto.
+
+**Hunyuan3D:** no se arrancó. Necesita fotos reales de 3 marcos (frente, perfil, arriba y tres cuartos, fondo blanco; protocolo en `02-arquitectura.md`) y una cuenta de Colab o Kaggle. Eso lo tiene que conseguir Sebastian.
+
+**Pregunta de Sebastian sobre el LICENSE:** el que falta es el del repo original, y solo su autor puede agregarlo; nuestra copia ya tiene `widget/LICENSE-UPSTREAM.md`. Otra cosa es la licencia de **nuestro** repo: hoy no tiene ninguna, lo que en la práctica equivale a "todos los derechos reservados". Si se quiere dejarlo explícito, es una decisión de Sebastian (`TBD`).
+
+---
+
 ## 2026-10-18 — Sesión 2: Fase 0, primer día del spike
 
 **Qué se hizo**

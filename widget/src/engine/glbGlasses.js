@@ -12,12 +12,39 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
  *   bridge    — bridge point in source coordinates (after the GLB's own root nodes)
  *   rotationY — rotation that turns the source "forward" into +Z
  */
-export const SUN_GLASSES = {
-    url: process.env.PUBLIC_URL + '/models-dev/sun_glasses.glb',
-    unitToMm: 10,                 // authored in centimetres
-    bridge: [6.91, 0.87, 0.52],   // back face of the bridge bar, centred
-    rotationY: -Math.PI / 2       // source faces +X with its width along Z
-};
+var MODELS_URL = process.env.PUBLIC_URL + '/models-dev/';
+
+export const FRAMES = [
+    {
+        id: 'sun',
+        name: 'Sol',
+        kind: 'sun',
+        url: MODELS_URL + 'sun_glasses.glb',
+        unitToMm: 10,                 // authored in centimetres
+        bridge: [6.91, 0.87, 0.52],   // back face of the bridge bar, centred
+        rotationY: -Math.PI / 2       // source faces +X with its width along Z
+    },
+    {
+        id: 'acetate',
+        name: 'Acetato',
+        kind: 'reading',
+        url: MODELS_URL + 'acetate.glb',
+        unitToMm: 100,                // authored in decimetres (front 140.6 mm, temples 133 mm)
+        bridge: [0, 0.121, 0.070],    // back face of the acetate bridge, centred
+        rotationY: 0                  // already faces +Z
+    },
+    {
+        id: 'metal',
+        name: 'Metal',
+        kind: 'sun',
+        url: MODELS_URL + 'metal.glb',
+        // Units are inconsistent (front 18.5 units, temples 14.6): scaled so the
+        // front is 140 mm, which leaves the temples short (~110 mm).
+        unitToMm: 140 / 18.508,
+        bridge: [0, 184.45, 16.18],   // bridge wire; the model sits at head height
+        rotationY: 0                  // already faces +Z
+    }
+];
 
 /**
  * Load a GLB and wrap it so the returned group follows ADR-015.

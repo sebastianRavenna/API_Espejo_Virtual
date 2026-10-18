@@ -21,16 +21,18 @@ Lo opera Sebastian (Raven-Net); al inicio la digitalización es un servicio manu
 | `docs/source/` | Plan, prompt inicial e instrucciones originales (congelados) | Solo como referencia histórica; manda `docs/` |
 
 ## 3. Estado actual (2026-10-18)
-- **Fase:** 0 — Spike técnico, en curso. **Primer día cumplido.**
-- **Hecho:** el repo original está copiado en `widget/` (MIT declarada solo en el README, ADR-023) y corre por HTTPS con certificado autofirmado (ADR-024; comandos en `04-desarrollo.md`). `sun_glasses.glb` reemplaza al modelo procedural, en mm y con origen en el puente, con escala calibrada por iris (ADR-025). Además: video y anteojo sincronizados, color de la cámara corregido y oclusor de cabeza. Sebastian lo probó con cámara en la PC y en el celular: "perfecto". Los GLB de prueba quedan fuera del repo (ADR-026).
-- **Límites conocidos:** de perfil completo el anteojo desaparece (MediaPipe pierde la cara); las patillas pasan por delante de la oreja y del pelo (backlog); se ve algo "sticker" por las lentes opacas del modelo y la falta de sombra.
-- **Repo:** https://github.com/sebastianRavenna/API_Espejo_Virtual (rama `main`; primer commit `15b0fa0`, 2026-10-18).
-- **Esperando a Sebastian:** abrir el issue de `LICENSE` en el repo original. Pendiente nuevo: P-13 (el spike es JS + React + CRA, no TS + Vite). Quedan 10 pendientes en `07-decisiones.md`.
+- **Fase:** 0 — Spike técnico, en curso. Primer día cumplido.
+- **Repo:** https://github.com/sebastianRavenna/API_Espejo_Virtual (rama `main`).
+- **Hecho:** el spike está en `widget/` (MIT declarada solo en el README, ADR-023) y corre por HTTPS con certificado autofirmado (ADR-024). Tiene tres marcos de referencia (sol, acetato grueso, metálico fino), elegibles con botones, en mm y con origen en el puente, con escala calibrada por iris (ADR-025), video y anteojo sincronizados y oclusor de cabeza. El de sol está probado con cámara en PC y celular ("perfecto"). La DP estimada por iris está implementada y se muestra como DP de lejos, corregida por convergencia (ADR-027).
+- **Probado con cámara:** los tres marcos se ven bien (acetato y metal con patillas sobre el pelo al mirar abajo).
+- **Alerta de escala y DP:** la DP de Sebastian dio 58 mm (PDMeasure 58,2; Auglio, que hoy usa la óptica del piloto, 63–64), y el anteojo se vio proporcionado también en la cara de su hijo, cuando debería verse grande. La regla del iris puede no medir a la persona. Hay un modo diagnóstico (`?debug=1`) para comprobarlo. La DP de su hijo variaba 59–66 mm por estar lejos de la cámara: se subió la resolución a 1280×720, se exige un iris más grande y se rechazan las mediciones dispersas (falta probarlo). No mostrar la DP a una óptica sin validarla con un óptico.
+- **Límites conocidos:** de perfil completo el anteojo desaparece (MediaPipe); las patillas pasan por delante de la oreja y del pelo (backlog); el metálico tiene patillas cortas porque el archivo trae unidades incoherentes; `acetate.glb` pesa 5 MB (P-07).
+- **Esperando a Sebastian:** probar marcos y DP con la cámara; fotos de 3 marcos reales para la prueba de Hunyuan3D; abrir el issue de `LICENSE` en el repo original; decidir si nuestro repo lleva licencia (`TBD`). Pendientes abiertos: 10, entre ellos P-13 (el spike es JS + React + CRA, no TS + Vite).
 
 ## 4. Próximos tres pasos
-1. Cargar los otros dos GLB (acetato grueso y metálico fino) con su spec de correcciones, y anotar qué hubo que corregir en cada uno para el script de Blender.
-2. Agregar la estimación de DP con landmarks de iris, reusando la regla de escala de ADR-025.
-3. Probar Hunyuan3D multi-vista con fotos reales de 3 marcos (decide P-02).
+1. Validar la DP contra la medición de un óptico. Hoy la app muestra la DP de lejos (corregida por convergencia): ~60,5 mm para Sebastian, contra 63–64 de Auglio. La regla del iris coincide con la tarjeta en ~2 %.
+2. Prueba de Hunyuan3D multi-vista con las fotos de 3 marcos reales (decide P-02).
+3. Medir peso y tiempo de carga de los GLB en el celular para decidir la compresión (P-07).
 
 ## 5. Protocolo de trabajo
 **Al recibir un prompt:**

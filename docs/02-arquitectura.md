@@ -58,10 +58,10 @@ Costo fijo de arranque: **USD 10/mes**. Los límites de cada plan cambian; hay q
 
 - Se calcula con los landmarks del iris de MediaPipe FaceLandmarker. El diámetro del iris humano (**11,7 mm**) sirve de regla para pasar de píxeles a milímetros.
 - Se toma la **mediana de varios frames** para reducir el ruido.
-- Precisión típica: **1–2 mm**.
+- Precisión típica: **1–2 mm según el plan; no validada.** El iris adulto varía entre ~11 y ~12,5 mm, lo que por sí solo da ±2–3 mm, y en la primera prueba la app y Auglio difirieron 6 mm (ver ADR-027).
 - Siempre se presenta como "DP estimada", con un aviso de que no reemplaza la medición del óptico.
-- `TBD`: cuántos frames y cuánto tiempo dura la medición, y qué hacer si la cara no está de frente o está lejos. Se define en el spike.
-- DP de cerca vs. lejos queda para la Fase 5.
+- Frames, duración y condiciones: definidos en ADR-027 (45 cuadros válidos de frente, iris ≥ 20 px con la cámara a 1280×720, dispersión ≤ 2 mm, hasta 10 s).
+- Se muestra la **DP de lejos**: la medición se hace mirando la cámara (los ojos convergen) y se corrige con la distancia estimada (ADR-027). Mostrar también la DP de cerca queda para la Fase 5.
 
 ## Licenciamiento
 

@@ -63,6 +63,8 @@ Los scripts `start` y `build` se cambiaron respecto del original: pasaban `NODE_
 ## Modelos 3D en el spike
 
 - El widget carga el GLB con `GLTFLoader` (`widget/src/engine/glbGlasses.js`). Cada modelo tiene una "spec" con las correcciones para llevarlo a ADR-015: `unitToMm`, `bridge` (punto del puente en coordenadas del archivo) y `rotationY`. Son exactamente lo que después tiene que hacer el script de Blender.
+- **Modo diagnóstico (`?debug=1`):** muestra la resolución real de la cámara, el iris en px, el ancho y el alto de cara calibrados, la escala y el giro. Tiene además una **verificación con tarjeta**: con una tarjeta tamaño ISO (85,6 mm, mostrando el dorso) apoyada plana en la frente, "Congelar" detiene la imagen; dos clics en los bordes de la tarjeta comparan su escala con la del iris y dan la DP y el ancho de cara según cada regla.
+- Los tres marcos están en `FRAMES` (`glbGlasses.js`) y se eligen con los botones "Sol", "Acetato" y "Metal". Cada GLB se baja la primera vez que se elige y queda en memoria.
 - Al cargar, la consola muestra el tamaño resultante en mm (`[glasses] ... size mm (w x h x d)`): sirve para verificar la escala.
 - La escala en pantalla sale de una regla: el diámetro del iris (11,7 mm) calibra el ancho de cara y el alto de la parte superior de la cara de la persona, en mm (medianas de 30 frames, solo con la cara de frente). En cada frame se toma la mayor de las dos escalas en píxeles, para que no se achique al girar ni al cabecear (ADR-025). El origen del modelo (puente) se apoya en el landmark 168 de MediaPipe (entrecejo, sobre el puente nasal). Los ajustes finos están en `CFG` de `widget/src/engine/constants.js`, en mm (ADR-025).
 - **Los GLB de prueba no están en el repo (ADR-026).** Después de clonar hay que bajarlos a `widget/public/models-dev/` siguiendo la lista de `widget/README.md`; sin ellos el widget arranca pero no muestra anteojo. `models-dev/` (raíz) y `widget/public/models-dev/` están en `.gitignore`.
@@ -125,6 +127,16 @@ Registro para diseñar el script. `sun_glasses.glb` (Sketchfab, Long Nguyễn, C
 | Lentes | son parte de la misma malla y del mismo material que el marco; opacas, negras, sin transparencia | **sin corregir** en el spike; es el paso 2 del script (planos de vidrio) |
 | Patillas | abiertas hacia afuera (ancho total 156,6 mm contra 124 mm del frente) | sin corregir; el oclusor las esconde, pero al girar puede notarse |
 | Medidas | el archivo no dice calibre-puente-patilla | sin corregir; la escala real sale de las unidades del archivo, no de la patilla |
+
+Los otros dos GLB de referencia:
+
+| | `acetate.glb` (Marius.Eder, acetato grueso) | `metal.glb` (Lamis, metálico fino al aire) |
+|---|---|---|
+| Unidades | decímetros: × 100 (frente 140,6 mm, patilla 133 mm, coherente) | **incoherentes**: el frente mide 18,5 unidades y la patilla 14,6. Ninguna unidad da medidas reales. Se escaló para que el frente mida 140 mm (× 7,56) y las patillas quedan cortas (~110 mm) |
+| Ejes | ya mira a +Z, Y arriba | ya mira a +Z, Y arriba |
+| Origen | casi en el frente; el puente está en `[0, 0.121, 0.070]` | el modelo viene a la altura de una cabeza (Y ≈ 184); puente en `[0, 184.45, 16.18]` |
+| Lentes | malla y material aparte (`Frame.1`, transparente) | malla aparte, con `KHR_materials_transmission`, que three 0.113 no soporta: se ven como transparencia común |
+| Peso | **5 MB, 68.000 vértices**: el más pesado por lejos (P-07) | 1,6 MB, 7.600 vértices, 4 texturas PNG |
 
 Conclusión para el script: no se puede asumir ni unidades, ni ejes, ni origen. Hay que detectar el frente (el lado con más vértices y la barra del puente en el centro) y el ancho, y escalar con las medidas de la patilla, no con las unidades del archivo.
 

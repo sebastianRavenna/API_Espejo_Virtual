@@ -35,9 +35,9 @@ Para que el dev server los sirva, bajalos a **`widget/public/models-dev/`** con 
 
 | Archivo | Uso en el spike | Autor | Licencia | Dónde bajarlo |
 |---|---|---|---|---|
-| `sun_glasses.glb` | **Cargado hoy** (sol) | Long Nguyễn | CC-BY-4.0 | [Sketchfab: Sun Glasses](https://sketchfab.com/3d-models/sun-glasses-18b31f8c855943a0ba4af57b93be8e60) |
-| `glasses (1).glb` | Candidato, sin spec todavía | Lamis | CC-BY-4.0 | [Sketchfab: Glasses (Lamis)](https://sketchfab.com/3d-models/glasses-0a51db978635499cbce9cc57c434ffdf) |
-| `glasses.glb` | Candidato, sin spec todavía | Marius.Eder | CC-BY-4.0 | [Sketchfab: Glasses (Marius.Eder)](https://sketchfab.com/3d-models/glasses-007651a9450746a5b6c5a126d484cd52) |
+| `sun_glasses.glb` | Marco "Sol" | Long Nguyễn | CC-BY-4.0 | [Sketchfab: Sun Glasses](https://sketchfab.com/3d-models/sun-glasses-18b31f8c855943a0ba4af57b93be8e60) |
+| `acetate.glb` | Marco "Acetato" (acetato grueso) | Marius.Eder | CC-BY-4.0 | [Sketchfab: Glasses (Marius.Eder)](https://sketchfab.com/3d-models/glasses-007651a9450746a5b6c5a126d484cd52) |
+| `metal.glb` | Marco "Metal" (metálico fino al aire) | Lamis | CC-BY-4.0 | [Sketchfab: Glasses (Lamis)](https://sketchfab.com/3d-models/glasses-0a51db978635499cbce9cc57c434ffdf) |
 
 Cómo bajarlos: en la página del modelo, "Download 3D Model" → formato **glTF Binary (.glb)**, versión original
 (no la "autoconverted" reducida, si aparece). Hace falta una cuenta de Sketchfab, gratuita. Renombrar el archivo al

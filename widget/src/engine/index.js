@@ -13,9 +13,11 @@
 import * as THREE from 'three';
 import { CFG, LM, IRIS, FACE_OVAL } from './constants';
 import { clamp, toV, eyeMid, qDelta, toPixels } from './helpers';
-import { loadGlasses, SUN_GLASSES } from './glbGlasses';
+import { loadGlasses, FRAMES } from './glbGlasses';
 import { createDynamicFaceMesh, createHeadOccluder } from './occluder';
 import { createCamera, createVideoBackground, createLights, createRenderer, handleResize } from './scene';
+
+export { FRAMES };
 
 // ── Private State ────────────────────────────────────────────────────────────
 var faceLandmarker;
@@ -59,25 +61,156 @@ function pushSample(samples, value) {
     if (samples.length > CFG.rulerWindow) samples.shift();
 }
 
+function dist(pts, a, b) {
+    return toV(pts, a).distanceTo(toV(pts, b));
+}
+
+/** Mean iris diameter in pixels (two diameters per eye), or 0 without iris points. */
+function irisDiameterPx(pts) {
+    if (pts.length <= IRIS.rightBottom) return 0;
+    return (dist(pts, IRIS.leftRight, IRIS.leftLeft) + dist(pts, IRIS.leftTop, IRIS.leftBottom) +
+            dist(pts, IRIS.rightRight, IRIS.rightLeft) + dist(pts, IRIS.rightTop, IRIS.rightBottom)) / 4;
+}
+
+/** |z| of the eye line: 0 when the face looks straight at the camera. */
+function eyeLineTilt(pts) {
+    return Math.abs(toV(pts, LM.rightEyeOuter).sub(toV(pts, LM.leftEyeOuter)).normalize().z);
+}
+
 function measurePxPerMm(pts) {
-    var d = function(a, b) { return toV(pts, a).distanceTo(toV(pts, b)); };
-    var faceWidthPx = d(LM.leftCheek, LM.rightCheek);
-    var faceHeightPx = d(LM.forehead, LM.subnasale);
+    var faceWidthPx = dist(pts, LM.leftCheek, LM.rightCheek);
+    var faceHeightPx = dist(pts, LM.forehead, LM.subnasale);
+    var irisPx = irisDiameterPx(pts);
 
-    var eyeLine = toV(pts, LM.rightEyeOuter).sub(toV(pts, LM.leftEyeOuter)).normalize();
-    var frontal = Math.abs(eyeLine.z) < CFG.frontalMaxEyeZ;
-
-    if (frontal && pts.length > IRIS.rightBottom) {
-        var irisPx = (d(IRIS.leftRight, IRIS.leftLeft) + d(IRIS.leftTop, IRIS.leftBottom) +
-                      d(IRIS.rightRight, IRIS.rightLeft) + d(IRIS.rightTop, IRIS.rightBottom)) / 4;
+    if (irisPx > 0 && eyeLineTilt(pts) < CFG.frontalMaxEyeZ) {
         pushSample(faceWidthMmSamples, faceWidthPx * CFG.irisDiameterMm / irisPx);
         pushSample(faceHeightMmSamples, faceHeightPx * CFG.irisDiameterMm / irisPx);
     }
 
-    return Math.max(
-        faceWidthPx / median(faceWidthMmSamples, CFG.faceWidthMm),
-        faceHeightPx / median(faceHeightMmSamples, CFG.faceHeightMm)
-    );
+    var faceWidthMm = median(faceWidthMmSamples, CFG.faceWidthMm);
+    var faceHeightMm = median(faceHeightMmSamples, CFG.faceHeightMm);
+    var pxPerMm = Math.max(faceWidthPx / faceWidthMm, faceHeightPx / faceHeightMm);
+
+    // Diagnostics for ?debug=1: is the iris ruler giving plausible face sizes?
+    debugInfo = {
+        irisPx: irisPx,
+        faceWidthPx: faceWidthPx,
+        faceWidthMm: faceWidthMm,
+        faceHeightMm: faceHeightMm,
+        pxPerMm: pxPerMm,
+        eyeTilt: eyeLineTilt(pts),
+        samples: faceWidthMmSamples.length,
+        videoSize: video.videoWidth + '×' + video.videoHeight,
+        videoWidth: video.videoWidth,
+        pupilPx: pts.length > IRIS.rightCenter ? dist(pts, IRIS.leftCenter, IRIS.rightCenter) : 0
+    };
+    return pxPerMm;
+}
+
+// While frozen, tracking and drawing stop, so the last frame and its
+// diagnostics stay on screen for measuring a reference card (?debug=1).
+var frozen = false;
+
+export function setFrozen(value) {
+    frozen = value;
+}
+
+var debugInfo = null;
+
+/** Latest scale-ruler values, or null when no face is tracked. */
+export function getDebugInfo() {
+    return debugInfo;
+}
+
+// ── Pupillary Distance (estimate, ADR-010) ───────────────────────────────────
+// Distance between iris centres measured with the iris itself as the ruler,
+// so it does not depend on camera distance. Only frames where the face looks
+// at the camera and is close enough count; the result is their median.
+//
+// Looking at the camera, the eyes converge and the pupils move closer than
+// when looking far away, which is the PD opticians report. Each eye turns
+// about a centre ~10 mm behind the pupil, so the near PD at distance D is
+// farPd − 2·r·sin(θ), with sin(θ) = (farPd/2) / √(D² + (farPd/2)²).
+// D comes from the pixel scale and the camera's assumed field of view.
+var pd = null;
+
+/** Camera focal length in pixels, from the assumed field of view of the long side. */
+function focalLengthPx() {
+    var longSidePx = Math.max(video.videoWidth, video.videoHeight);
+    return (longSidePx / 2) / Math.tan(CFG.pd.cameraFovDeg * Math.PI / 360);
+}
+
+/** Far PD from a PD measured while converging on the camera. */
+function farPdFromNear(nearPdMm, pxPerMm) {
+    var r = CFG.pd.pupilToRotationMm;
+    var distanceMm = focalLengthPx() / pxPerMm + r;  // camera to the eyes' rotation centres
+    // Solve near = far − 2·r·(far/2)/√(D² + (far/2)²) for far; a few fixed-point steps converge
+    var far = nearPdMm;
+    for (var i = 0; i < 4; i++) {
+        var half = far / 2;
+        far = nearPdMm + 2 * r * half / Math.sqrt(distanceMm * distanceMm + half * half);
+    }
+    return { farMm: far, distanceMm: distanceMm };
+}
+
+export function measurePd(onProgress) {
+    if (pd) pd.reject(new Error('restarted'));
+    return new Promise(function(resolve, reject) {
+        pd = {
+            samples: [], nearSamples: [], distanceSamples: [],  // samples = far PD
+            startedAt: performance.now(), onProgress: onProgress, resolve: resolve, reject: reject
+        };
+    });
+}
+
+/** Value at fraction q (0–1) of the sorted samples. */
+function quantile(samples, q) {
+    var sorted = samples.slice().sort(function(a, b) { return a - b; });
+    return sorted[Math.floor((sorted.length - 1) * q)];
+}
+
+// pts is null when no face is tracked in this frame.
+// onProgress(progress 0–1, status) with status 'ok' | 'noface' | 'far' | 'turned'.
+function samplePd(pts) {
+    if (!pd) return;
+    var irisPx = pts ? irisDiameterPx(pts) : 0;
+    var elapsed = performance.now() - pd.startedAt;
+    var status = !pts ? 'noface'
+        : irisPx < CFG.pd.minIrisPx ? 'far'
+        : eyeLineTilt(pts) >= CFG.pd.maxEyeTilt ? 'turned'
+        : 'ok';
+    if (status === 'ok') {
+        var pxPerMm = irisPx / CFG.irisDiameterMm;
+        var nearMm = dist(pts, IRIS.leftCenter, IRIS.rightCenter) / pxPerMm;
+        var corrected = farPdFromNear(nearMm, pxPerMm);
+        pd.samples.push(corrected.farMm);
+        pd.nearSamples.push(nearMm);
+        pd.distanceSamples.push(corrected.distanceMm);
+    }
+
+    var progress = pd.samples.length / CFG.pd.frames;
+    if (pd.onProgress) pd.onProgress(Math.min(progress, 1), status);
+
+    if (pd.samples.length >= CFG.pd.frames) {
+        var done = pd; pd = null;
+        // Spread between the 25th and 75th percentile: if the frames disagree,
+        // the median is not trustworthy and the person should get closer and retry
+        var spreadMm = quantile(done.samples, 0.75) - quantile(done.samples, 0.25);
+        if (spreadMm > CFG.pd.maxSpreadMm) {
+            done.reject(new Error('unstable'));
+        } else {
+            done.resolve({
+                pdMm: median(done.samples, 0),             // far PD, what opticians report
+                nearPdMm: median(done.nearSamples, 0),     // as measured, converging on the camera
+                distanceMm: median(done.distanceSamples, 0),
+                spreadMm: spreadMm,
+                frames: done.samples.length
+            });
+        }
+    } else if (elapsed > CFG.pd.timeoutMs) {
+        var failed = pd; pd = null;
+        failed.reject(new Error('timeout'));
+    }
 }
 
 // ── Animation Loop ───────────────────────────────────────────────────────────
@@ -131,20 +264,46 @@ export function initializeThreejs(objName) {
     scene.add(faceObj);
 
     // Glasses model (GLB in ADR-015 convention: mm, origin at the bridge)
-    loadGlasses(SUN_GLASSES).then(function(g) {
-        g.visible = false;
-        g.add(createHeadOccluder(CFG.headOccluder));  // follows the glasses' pose and mm scale
-        scene.add(g);
-        glassesObj = g;
-    }).catch(function(err) {
-        console.error('[glasses] could not load model', err);
-    });
+    selectFrame(FRAMES[0].id);
 
     window.addEventListener('resize', function() {
         handleResize(camera, renderer, video);
     }, false);
 
     animate();
+}
+
+// ── Public: Frame Selection ──────────────────────────────────────────────────
+// Each GLB loads once and is cached. The new frame takes over the current pose,
+// so switching while the face is tracked does not jump.
+var frameCache = {};
+var selectedFrameId = null;
+
+export function selectFrame(id) {
+    selectedFrameId = id;
+    if (!frameCache[id]) {
+        var spec = FRAMES.find(function(f) { return f.id === id; });
+        frameCache[id] = loadGlasses(spec).then(function(g) {
+            g.add(createHeadOccluder(CFG.headOccluder));  // follows the glasses' pose and mm scale
+            return g;
+        });
+    }
+    return frameCache[id].then(function(g) {
+        if (selectedFrameId !== id || glassesObj === g) return;
+        if (glassesObj) {
+            g.position.copy(glassesObj.position);
+            g.quaternion.copy(glassesObj.quaternion);
+            g.scale.copy(glassesObj.scale);
+            g.visible = glassesObj.visible;
+            scene.remove(glassesObj);
+        } else {
+            g.visible = false;
+        }
+        scene.add(g);
+        glassesObj = g;
+    }).catch(function(err) {
+        console.error('[glasses] could not load model ' + id, err);
+    });
 }
 
 // ── Public: Initialize MediaPipe Face Tracking ───────────────────────────────
@@ -188,7 +347,7 @@ function scheduleNextPrediction() {
 
 // ── Per-Frame Prediction ─────────────────────────────────────────────────────
 function renderPrediction() {
-    if (predictionInFlight) {
+    if (predictionInFlight || frozen) {
         scheduleNextPrediction();
         return;
     }
@@ -207,6 +366,7 @@ function renderPrediction() {
         if (faceObj) faceObj.visible = true;
 
         var pts = toPixels(results.faceLandmarks[0], video);
+        samplePd(pts);
 
         // ── Key landmarks ──
         var pxPerMm = measurePxPerMm(pts);
@@ -312,6 +472,8 @@ function renderPrediction() {
         sm.ready = false;
         faceWidthMmSamples.length = 0;
         faceHeightMmSamples.length = 0;
+        debugInfo = null;
+        samplePd(null);
     }
 
     // Same task as detectForVideo, so the texture uploads the frame just tracked

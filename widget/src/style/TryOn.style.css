@@ -194,6 +194,8 @@
 /* ── Controls ────────────────────────────────────────────────────────────────── */
 .tryon-controls {
     display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
     gap: 12px;
 }
 
@@ -212,6 +214,7 @@
     cursor: pointer;
     transition: all 0.2s ease;
     user-select: none;
+    white-space: nowrap;
 }
 
 .tryon-btn:hover {
@@ -247,6 +250,62 @@
 
 .tryon-btn-record.recording {
     animation: pulse-record 1.8s ease infinite;
+}
+
+/* Frame selector and disabled buttons */
+.tryon-btn.selected {
+    background: rgba(255, 255, 255, 0.14);
+    border-color: rgba(255, 255, 255, 0.4);
+    color: #ffffff;
+}
+
+.tryon-btn:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
+/* ── PD estimate ─────────────────────────────────────────────────────────────── */
+.tryon-pd {
+    max-width: 420px;
+    text-align: center;
+    color: #ccccdd;
+    font-size: 13px;
+}
+
+.tryon-pd p {
+    margin: 4px 0;
+}
+
+.tryon-pd-value {
+    font-size: 20px;
+    font-weight: 600;
+    color: #ffffff;
+}
+
+.tryon-pd-notice {
+    font-size: 11px;
+    color: #8888a0;
+}
+
+/* Diagnostics (?debug=1) */
+.tryon-debug {
+    margin: 0;
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.06);
+    color: #aaf0aa;
+    font-size: 12px;
+}
+
+/* Card check markers (?debug=1), positioned at the click inside .tryon-viewport */
+.tryon-card-mark {
+    position: absolute;
+    width: 2px;
+    height: 24px;
+    margin: -12px 0 0 -1px;
+    background: #ff3b3b;
+    pointer-events: none;
+    z-index: 10;
 }
 
 /* ── Footer ──────────────────────────────────────────────────────────────────── */
