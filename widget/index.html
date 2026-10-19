@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Espejo Virtual · desarrollo</title>
+  <style>
+    body { margin: 0; font-family: Georgia, serif; background: #f6f1ea; color: #222; }
+    main { max-width: 760px; margin: 40px auto; padding: 0 16px; }
+    .product { display: flex; gap: 24px; flex-wrap: wrap; align-items: center; }
+    .photo { width: 280px; height: 180px; background: #e4dccf; display: grid; place-items: center; color: #8a7f6e; }
+  </style>
+</head>
+<body>
+  <!-- Dev page (npm run dev). Simulates a shop's product page; Vite serves the widget from source. -->
+  <main>
+    <h1>Óptica de prueba</h1>
+    <div class="product">
+      <div class="photo">foto del marco</div>
+      <div>
+        <h2>Marco de prueba</h2>
+        <p>$ 120.000</p>
+        <script type="module" src="/src/main.ts" data-espejo-virtual data-key="dev"></script>
+      </div>
+    </div>
+  </main>
+</body>
+</html>

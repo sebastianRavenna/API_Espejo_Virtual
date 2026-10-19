@@ -11,55 +11,72 @@ Esta carpeta es la raíz del repo: https://github.com/sebastianRavenna/API_Espej
 ├── CLAUDE.md                 # documento troncal (leer siempre)
 ├── docs/                     # memoria del proyecto (01–08)
 │   └── source/               # plan, prompt inicial e instrucciones originales (congelados)
-├── widget/                   # widget.js: spike → producto. Hoy: JavaScript + React 16 + react-scripts 3.4 (P-13)
+├── widget/                   # widget.js: TypeScript + Vite, sin React (ADR-028)
+├── test-pages/               # HTML pelada para probar el embed del build
 ├── worker/                   # endpoint público (Cloudflare Worker, TypeScript)
 ├── panel/                    # panel de ópticas (TypeScript); framework TBD
 ├── supabase/migrations/      # SQL de esquema y RLS
 ├── blender/                  # scripts de post-proceso (Python)
 ├── notebooks/                # notebooks de Colab para la generación 3D (Hunyuan3D, P-02)
-└── test-pages/               # HTML pelada para probar el embed
 ```
 
 `TBD`: el framework del panel. No está en el plan; se decide antes de la Fase 2 y se registra como decisión.
 
 ## Setup local
 
-- **HTTPS local es obligatorio:** sin HTTPS el navegador no da acceso a la cámara. `localhost` cuenta como contexto seguro en el escritorio, pero para probar desde el celular por la LAN hace falta HTTPS de verdad.
-- **Cómo se resuelve (ADR-024):** el dev server de `react-scripts` (el que trae el repo original) genera solo un certificado autofirmado con `HTTPS=true`. No hace falta instalar nada más. La configuración está en `widget/.env.development` (`HTTPS=true`, `PORT=3000`, `BROWSER=none`). El server escucha en todas las interfaces (`0.0.0.0`) por defecto.
-- **Requisitos:** Node 22.13 (el que hay en la PC de Sebastian) funciona, aunque el `package.json` original pide `>=18 <21`. npm 11. Blender: versión `TBD` (para `blender/`, más adelante).
-- **Primera vez:** `npm install` dentro de `widget/` (unos 3 minutos, ~1850 paquetes, muchos avisos de paquetes deprecados: es react-scripts 3.4, de 2020).
-- **MediaPipe** no se instala por npm: el código lo baja en tiempo de ejecución de `unpkg.com` (`@mediapipe/tasks-vision@0.10.7`, JS + WASM) y el modelo `face_landmarker.task` de `storage.googleapis.com`. Hace falta internet. Si conviene servirlo desde nuestro CDN sigue `TBD` (ver "Build y publicación").
-- Variables de entorno con secretos (URL de Supabase, claves, bucket de R2): `TBD`. Nunca se commitean. `widget/.env.development` no tiene secretos y sí se commitea.
+- **Stack del widget (ADR-028):** TypeScript + Vite, sin React. three.js 0.113.2 (la versión del repo original, para no cambiar el aspecto en la migración; actualizarla es P-17). 16 paquetes en total, versiones exactas en `widget/package-lock.json`, que se commitea.
+- **Requisitos:** Node 22 (`widget/.node-version`; Vite 6 pide ≥ 20.19). npm 11. Para el certificado, el `openssl` que viene con Git para Windows. Blender: versión `TBD` (para `blender/`, más adelante).
+- **Primera vez:** `cd widget`, `npm install` (unos segundos) y `npm run cert`, que crea un certificado autofirmado en `widget/.cert/` (fuera del repo) para localhost y las IP de la red local. Si cambia la IP de la PC, se vuelve a correr `npm run cert`.
+- **HTTPS local es obligatorio:** sin HTTPS no hay cámara. `localhost` cuenta como contexto seguro en el escritorio, pero desde el celular por la LAN hace falta HTTPS de verdad (ADR-024).
+- **MediaPipe** no se instala por npm: el widget lo baja en tiempo de ejecución de `unpkg.com` (`@mediapipe/tasks-vision@0.10.7`, JS + WASM) y el modelo `face_landmarker.task` de `storage.googleapis.com`. Hace falta internet. Si conviene servirlo desde nuestro CDN sigue `TBD` (ver "Build y publicación").
+- Variables de entorno con secretos (URL de Supabase, claves, bucket de R2): `TBD`. Nunca se commitean.
 
 ### Probar en la PC
 
-1. `cd widget` y `npm start`.
-2. Abrir **https://localhost:3000** en Chrome. Aparece el aviso de certificado no válido: "Configuración avanzada" → "Continuar a localhost". Aceptar el permiso de cámara.
+1. `cd widget` y `npm run dev`.
+2. Abrir **https://localhost:3000** en Chrome. Aparece el aviso de certificado no válido: "Configuración avanzada" → "Continuar a localhost".
+3. La página simula la ficha de un producto de una óptica. Tocar **"Probátelos"**: se abre el modal y recién ahí pide permiso de cámara. Al cerrar el modal, la cámara se apaga.
 
 ### Probar desde el celular (misma red Wi-Fi)
 
-1. Con `npm start` corriendo, averiguar la IP de la PC en la LAN: `ipconfig` → "Dirección IPv4" del adaptador Wi-Fi/Ethernet. **Ojo:** react-scripts muestra "On Your Network: https://192.168.56.1:3000", que es el adaptador de VirtualBox y **no sirve** desde el celular. El 2026-10-18 la IP correcta era `192.168.100.4` (puede cambiar si el router la reasigna).
-2. En el celular abrir `https://<IP>:3000`, aceptar el aviso de certificado ("Avanzado" → "Continuar" en Chrome Android; "Mostrar detalles" → "visitar este sitio web" en Safari iOS) y dar permiso de cámara.
-3. Si no carga: la primera vez que Node escucha en la red, Windows pregunta si permite el acceso en redes privadas. Si se rechazó, habilitar Node.js en el Firewall de Windows para redes privadas, y verificar que la red Wi-Fi de la PC esté marcada como "Privada".
-4. Pendiente de verificar en dispositivos reales (Sebastian): Chrome Android y Safari iOS con el certificado autofirmado.
+1. Con `npm run dev` corriendo, Vite muestra las direcciones "Network". La que sirve es la del adaptador Wi-Fi/Ethernet; `192.168.56.1` es VirtualBox y **no sirve** desde el celular. El 2026-10-18 la IP correcta era `192.168.100.4`.
+2. En el celular abrir `https://<IP>:3000`, aceptar el aviso de certificado y dar permiso de cámara.
+3. Si no carga: habilitar Node.js en el Firewall de Windows para redes privadas y verificar que la red Wi-Fi esté marcada como "Privada".
 
 ### Probar sin cámara (Claude Code)
 
-El panel de navegador de Claude Code no acepta certificados autofirmados ni da cámara. Para verificar el render se usó una segunda instancia por HTTP (`widget-http` en `.claude/launch.json`, puerto 3001) y una página temporal que reemplaza `getUserMedia` por una foto fija. Esa página no se dejó en el repo; con una foto no se puede probar el giro de cabeza ni la oclusión de patillas.
+El panel de navegador de Claude Code no acepta certificados autofirmados ni da cámara. Por eso `.claude/launch.json` tiene dos configuraciones por HTTP: `widget-http` (dev, puerto 3001) y `widget-plain` (build + HTML pelada, puerto 4174), que se levantan con `NO_HTTPS=1`. Para ejercitar el motor sin cara, se reemplaza `getUserMedia` por un canvas desde la consola: así se verifica que arranque la escena, cargue MediaPipe y los GLB, pero no el seguimiento de la cara.
 
 ## Comandos
 
+Todos dentro de `widget/`:
+
 | Tarea | Comando |
 |---|---|
-| Instalar dependencias del widget | `cd widget && npm install` |
-| Dev server del widget (HTTPS, LAN) | `cd widget && npm start` → `https://localhost:3000` y `https://<IP-LAN>:3000` |
-| Build del spike (no es todavía `widget.js`) | `cd widget && npm run build` → `widget/build/` |
-| Build de `widget.js` (Vite) | `TBD` (tarea posterior de la Fase 0) |
+| Instalar dependencias | `npm install` |
+| Crear el certificado HTTPS (una vez) | `npm run cert` |
+| Dev server (HTTPS, LAN) | `npm run dev` → `https://localhost:3000` y `https://<IP-LAN>:3000` |
+| Chequeo de tipos | `npm run typecheck` |
+| Build de `widget.js` | `npm run build` → `widget/dist/widget.js` (+ `dist/models-dev/`) |
+| Probar el build en una HTML pelada | `npm run preview:plain` → `https://localhost:4173` (sirve `test-pages/index.html` junto a `dist/widget.js`) |
 | Dev del Worker | `TBD` |
 | Aplicar migraciones | `TBD` |
-| Post-proceso de un marco | `TBD` (ver más abajo) |
+| Post-proceso de un marco | `python blender/prototype_postprocess.py …` (prototipo, ver más abajo) |
 
-Los scripts `start` y `build` se cambiaron respecto del original: pasaban `NODE_OPTIONS=--openssl-legacy-provider` con sintaxis de bash, que no anda en Windows. Ahora usan `react-scripts --openssl-legacy-provider start`, que react-scripts reenvía a Node. La opción hace falta porque webpack 4 usa un hash que OpenSSL 3 (Node ≥ 17) ya no permite por defecto. Los scripts `predeploy`/`deploy` (GitHub Pages del autor original) quedaron pero no se usan; el campo `homepage` se borró para que el sitio se sirva en la raíz.
+## Estructura de `widget/`
+
+```
+widget/
+├── index.html            # página de desarrollo: simula la ficha de producto de una óptica
+├── src/main.ts           # entrada de widget.js: busca su <script>, crea el host y monta el widget
+├── src/ui/widget.ts      # botón + modal en Shadow DOM, DP, foto, grabación, diagnóstico (?debug=1)
+├── src/ui/styles.css     # estilos encapsulados en el Shadow DOM
+├── src/engine/           # motor: engine.ts (clase con start/stop), frames.ts (catálogo y GLB),
+│                         #   scene.ts, occluder.ts, mediapipe.ts, helpers.ts, constants.ts (CFG)
+├── scripts/              # make-cert.mjs (HTTPS), copy-test-page.mjs (HTML pelada)
+├── public/models-dev/    # GLB de prueba (fuera del repo, ADR-026)
+└── vite.config.ts        # build en modo librería: un solo dist/widget.js (IIFE)
+```
 
 ## Modelos 3D en el spike
 
@@ -77,7 +94,7 @@ Los scripts `start` y `build` se cambiaron respecto del original: pasaban `NODE_
 - Nombres de archivos, tablas, columnas, variables y código en **inglés**. Textos visibles al usuario en español.
 - Las unidades van en el nombre: `_mm` para milímetros (como en `eye_size_mm`).
 - Convención 3D: origen en el puente, X hacia la sien, Y hacia arriba, Z hacia adelante, unidades en mm.
-- **El código del spike hoy no cumple la convención de TypeScript:** el repo original es JavaScript con React. La migración está pendiente (P-13).
+- El widget está en TypeScript estricto desde el 2026-10-19 (ADR-028). Los scripts auxiliares (`widget/scripts/`) son JavaScript de Node.
 - Ninguna dependencia nueva sin registrarla antes como decisión en `07-decisiones.md`.
 - Commits: `TBD` (convención de mensajes).
 
@@ -94,8 +111,10 @@ Los scripts `start` y `build` se cambiaron respecto del original: pasaban `NODE_
 
 ## Build y publicación de `widget.js`
 
-- Vite empaqueta todo en **un solo `widget.js`** (modo librería).
-- El script lee su `data-key`, crea su host con **Shadow DOM** y monta ahí la UI y el canvas.
+- Vite empaqueta todo en **un solo `widget.js`** (modo librería, formato IIFE): hoy pesa 656 KB (169 KB comprimido), casi todo three.js. Actualizar three (P-17) e importar solo lo que se usa debería achicarlo.
+- El script se ubica a sí mismo, inserta un botón **"Probátelos"** justo después de su `<script>` (o dentro de `data-target`) y abre el probador en un **modal** (ADR-029). Todo vive en un **Shadow DOM** (`<espejo-virtual>`).
+- Atributos del `<script>`: `data-key` (clave del tenant; todavía sin uso), `data-label` (texto del botón), `data-target` (selector donde montarlo) y `data-models` (URL base de los GLB; por defecto, `models-dev/` al lado de `widget.js`).
+- En la URL de la página: `?debug=1` muestra el diagnóstico de la regla del iris y la verificación con tarjeta; `?pitch=<grados>` ajusta la inclinación de las patillas.
 - MediaPipe necesita su modelo `.task` y sus archivos WASM. `TBD`: ¿se sirven desde nuestro CDN o desde el de Google? Afecta la privacidad percibida y el costo de egreso.
 - Se publica en Cloudflare Pages (ADR-021), en `https://cdn.<dominio>/widget.js` (P-03).
 - `TBD`: versionado. Pregunta: ¿las ópticas cargan siempre `widget.js` (la última versión) o una versión fija (`widget.v1.js`)? Con la última versión, un bug llega a todos los clientes a la vez.
@@ -165,6 +184,6 @@ Conclusión para el script: no se puede asumir ni unidades, ni ejes, ni origen. 
 
 ## Probar el widget embebido
 
-- **HTML pelada:** `test-pages/index.html` con solo el `<script>` y una clave de prueba, servida por HTTPS. Sirve para validar que el widget funciona sin ningún framework.
+- **HTML pelada:** `test-pages/index.html` con solo el `<script>` y una clave de prueba; `npm run preview:plain` la sirve por HTTPS junto al build. **Verificado el 2026-10-19:** el botón aparece entre los dos párrafos, en Shadow DOM, y el modal carga los modelos y MediaPipe sin errores.
 - **WordPress:** pegar el snippet en una página (bloque HTML personalizado) de un WordPress de prueba servido por HTTPS. Hay que verificar que el tema no rompe estilos (Shadow DOM) y que no choca con jQuery u otros scripts del tema. `TBD`: ¿qué instalación de WordPress se usa para probar (un sitio de staging de Raven-Net, un WordPress local)?
 - **WooCommerce (Fase 2/3):** el widget en la ficha de producto, asociado al marco correspondiente. `TBD`: cómo se vincula un producto de WooCommerce con un `frame` (atributo, SKU, ID). Pregunta abierta para la Fase 2.

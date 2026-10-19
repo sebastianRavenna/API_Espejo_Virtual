@@ -16,13 +16,13 @@ export const LM = {
     noseBridge: 168,
     noseTip: 1,
     subnasale: 2            // below the nose; with forehead gives a jaw-independent face height
-};
+} as const;
 
 /**
  * Face oval contour — 36 landmarks tracing the face outline.
  * Used to build the dynamic face mesh occluder each frame.
  */
-export const FACE_OVAL = [
+export const FACE_OVAL: readonly number[] = [
     10, 338, 297, 332, 284, 251, 389, 356, 454, 323, 361, 288,
     397, 365, 379, 378, 400, 377, 152, 148, 176, 149, 150, 136,
     172, 58, 132, 93, 234, 127, 162, 21, 54, 103, 67, 109
@@ -35,7 +35,15 @@ export const FACE_OVAL = [
 export const IRIS = {
     leftCenter: 468, leftRight: 469, leftTop: 470, leftLeft: 471, leftBottom: 472,
     rightCenter: 473, rightRight: 474, rightTop: 475, rightLeft: 476, rightBottom: 477
-};
+} as const;
+
+export interface HeadOccluderConfig {
+    radiusX: number;
+    radiusY: number;
+    radiusZ: number;
+    centerY: number;
+    centerZ: number;
+}
 
 /**
  * Calibration parameters. Distances are in real millimetres (ADR-015):
@@ -54,7 +62,7 @@ export const CFG = {
     pitchCorrectionDeg: 7,  // lowers the temples; the face's forehead–chin line leans back (override: ?pitch=). 0 rose, 15 dropped, 7 confirmed on camera
     // Invisible head ellipsoid (mm, bridge frame). radiusX stays under the
     // temples' half spacing (~62–78 mm) so the near temple is never hidden.
-    headOccluder: { radiusX: 64, radiusY: 110, radiusZ: 92, centerY: 20, centerZ: -100 },
+    headOccluder: { radiusX: 64, radiusY: 110, radiusZ: 92, centerY: 20, centerZ: -100 } as HeadOccluderConfig,
     // PD estimate (ADR-027): median of valid frames, looking at the camera, close enough
     pd: {
         frames: 45,         // valid frames to collect (~1.5 s at 30 fps)

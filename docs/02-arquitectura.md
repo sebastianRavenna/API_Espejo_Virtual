@@ -31,14 +31,14 @@ Todo el procesamiento de video (cámara, tracking, oclusor, render 3D y estimaci
 | Capa | Herramienta | Costo |
 |---|---|---|
 | Tracking facial e iris | MediaPipe Tasks Vision (FaceLandmarker) | 0 |
-| Render 3D | Three.js (espejo) y `<model-viewer>` (visor 360). El spike usa three 0.113 (2020), la del repo original (P-13) | 0 |
+| Render 3D | Three.js (espejo) y `<model-viewer>` (visor 360). El widget usa three 0.113 (2020), la del repo original; actualizarlo es P-17 | 0 |
 | Widget y panel (estáticos) | Cloudflare Pages (ADR-021) | 0 (estáticos ilimitados, 500 builds/mes) |
 | Endpoint público del widget | Cloudflare Workers | 0 (100k req/día) |
 | Base de datos y auth | Supabase, proyecto nuevo en la organización paga | USD 10/mes |
 | Assets 3D (GLB y texturas) | Cloudflare R2 con dominio propio | 0 (10 GB, egreso sin cargo) |
 | Generación 3D | Hunyuan3D (open source) en Colab/Kaggle, o Tripo/Hunyuan por API (`TBD`, P-02) | 0 al inicio; centavos por marco después, trasladados al cliente |
 | Post-proceso 3D | Blender headless (script Python), local | 0 |
-| Build del widget | Vite (empaqueta un solo `widget.js`) | 0 |
+| Build del widget | Vite + TypeScript, sin React (empaqueta un solo `widget.js`, ADR-028) | 0 |
 | Cobros | Transferencia; luego MercadoPago suscripciones | Solo comisión por transacción |
 
 Costo fijo de arranque: **USD 10/mes**. Los límites de cada plan cambian; hay que verificarlos al arrancar (ver `06-mantenimiento.md`).

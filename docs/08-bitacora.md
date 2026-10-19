@@ -4,6 +4,33 @@ Registro cronológico por sesión. La entrada más nueva va arriba.
 
 ---
 
+## 2026-10-19 — Sesión 3: empaquetado del widget (TypeScript + Vite, sin React)
+
+**Qué se hizo**
+- Sebastian eligió la opción (a) de P-13 (ADR-028), el formato **botón + modal** (ADR-029) y commitear `package-lock.json`.
+- Proyecto nuevo en `widget/`: `package.json` con three 0.113.2, TypeScript 5.9.3 y Vite 6.4.4 (16 paquetes, antes 1.849); `tsconfig` estricto; `vite.config.ts` en modo librería → `dist/widget.js` (IIFE). Se borraron React, react-scripts, `serviceWorker`, `public/index.html` y el resto de CRA.
+- HTTPS rehecho sin dependencias nuevas: `npm run cert` genera un certificado autofirmado con el openssl de Git, para localhost y las IP de la LAN. `NO_HTTPS=1` levanta por HTTP para el panel de Claude Code.
+- Motor portado a TypeScript (`src/engine/`) como clase `TryOnEngine` con `start()` y `stop()`, con la misma lógica: escala por iris, DP de lejos, suavizado, oclusores e inclinación de 7°. MediaPipe se carga una vez por página; los GLB se cachean.
+- UI nueva sin framework (`src/ui/`), en Shadow DOM y en español: botón "Probátelos", modal con pasos de carga, mensajes de error (permiso de cámara, sin cámara, sin https), selector de marcos, Medir DP, Foto, Grabar, aviso de privacidad y el diagnóstico de `?debug=1` con la verificación con tarjeta. Cerrar el modal (✕, Escape o clic afuera) apaga la cámara.
+- `src/main.ts` se ubica a sí mismo (`document.currentScript`), inserta el botón después de su `<script>` y lee `data-key`, `data-label`, `data-target` y `data-models`.
+- Página de desarrollo (`widget/index.html`, simula una ficha de producto) y HTML pelada (`test-pages/index.html`).
+
+**Verificado en el panel de Claude Code (sin cámara real)**
+- Typecheck limpio; build de 656 KB (169 KB comprimido), sin rastros de React.
+- El botón aparece donde va el script, sin heredar la tipografía de la página. Sin cámara se muestra el mensaje de permiso. Con una cámara sintética (canvas), el modal carga los pasos, la escena, el GLB (mismas medidas en mm) y MediaPipe ("Graph successfully started running").
+- Cerrar libera el canvas y la cámara; reabrir funciona sin recargar MediaPipe; cambiar de marco carga cada GLB sin errores. En celular (375 px), el modal ocupa toda la pantalla.
+- **HTML pelada con el build:** el botón aparece entre los dos párrafos, en Shadow DOM, y el modal carga los modelos desde `models-dev/` al lado de `widget.js`.
+- **Probado con cámara por Sebastian (PC y celular): funciona igual que antes de la migración.** Quedan ajustes finos, sin detallar todavía.
+
+**Preguntas de Sebastian durante la sesión**
+- Qué pedirle a su cliente y a las marcas para armar los GLB, y si las marcas suelen tener GLB (respuesta en el chat; resumen: pedir modelos 3D si existen, y si no, fotos de producto ortogonales y medidas).
+- Si lo armado es "el diseño de la API" y si conviene pasarlo antes por Claude Design: es la UI funcional del widget, no la API (el endpoint es de la Fase 1). Según ADR-017, la UI del widget se hace en código; usar Claude Design para el widget sería un cambio a esa decisión y queda a su criterio.
+
+**Pendiente**
+- Probar en WordPress. Diseño visual del widget antes del video de 30 segundos.
+
+---
+
 ## 2026-10-18 — Sesión 2 (continuación): otros dos marcos y DP
 
 **Qué se hizo**

@@ -47,7 +47,7 @@ Este documento lista qué pantallas existen y qué datos muestra cada una. Lo vi
 
 Durante el spike la UI es mínima pero prolija: termina en un video para mostrar a ópticas, así que no puede verse como un experimento. No se hacen mockups.
 
-`TBD`, se decide al empaquetar `widget.js` al final de la Fase 0: ¿el widget se abre en un modal flotante (botón "Probátelos") o se incrusta en un contenedor de la página? Ese formato define cómo se integra con la ficha de producto de WooCommerce.
+**Decidido (ADR-029):** botón "Probátelos" que abre un modal; en celular, pantalla completa. La cámara se pide al abrir y se apaga al cerrar. Todo en Shadow DOM. La versión actual es funcional y mínima; el diseño visual se trabaja antes del video de la Fase 0.
 
 ## Estados y mensajes de error visibles
 

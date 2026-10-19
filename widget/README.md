@@ -24,9 +24,11 @@ de **Alperen Uzun** ([@alperenuzun](https://github.com/alperenuzun)), copiado el
 
 ### Qué se cambió respecto del original
 
-Ver `docs/08-bitacora.md` (sesión del 2026-10-18, Fase 0 día 1). En resumen: el modelo procedural
-se reemplazó por un GLB cargado con `GLTFLoader`, normalizado a la convención de ADR-015, y el
-script `start` se cambió para que corra también en Windows.
+Ver `docs/08-bitacora.md`. En resumen: el modelo procedural se reemplazó por GLB normalizados a la
+convención de ADR-015; se agregaron la escala por iris, la DP estimada, oclusores y correcciones de
+seguimiento; y el 2026-10-19 todo se reescribió en TypeScript + Vite, sin React, como un `widget.js`
+con botón + modal en Shadow DOM (ADR-028, ADR-029). Del original queda la idea del motor
+(MediaPipe + Three.js + oclusor de la cara) y parte de su código, portado a TypeScript.
 
 ## Modelos 3D de prueba
 

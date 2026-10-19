@@ -1,0 +1,16 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Plain HTML embed test</title>
+</head>
+<body>
+  <!-- Bare page with no framework and no styles: only the widget tag, as a shop would paste it.
+       Served next to the built widget.js by `npm run preview:plain` (widget/). -->
+  <h1>Plain HTML</h1>
+  <p>Some text before the widget.</p>
+  <script src="./widget.js" data-key="test"></script>
+  <p>Some text after the widget.</p>
+</body>
+</html>

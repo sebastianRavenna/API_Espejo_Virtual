@@ -1,0 +1,179 @@
+/* Lives inside the widget's Shadow DOM: the host page's CSS cannot reach it
+   and these rules cannot leak out. `all: initial` cuts inherited styles too. */
+:host {
+    all: initial;
+    display: inline-block;
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    --ev-bg: #111118;
+    --ev-panel: #09090f;
+    --ev-text: #e8e8f0;
+    --ev-muted: #8888a0;
+    --ev-line: rgba(255, 255, 255, 0.1);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+
+/* ── Launcher button (what the shop's page shows) ─────────────────────────── */
+.ev-launch {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    border: 0;
+    border-radius: 999px;
+    background: #111118;
+    color: #fff;
+    font: 600 14px/1.2 inherit;
+    font-family: inherit;
+    cursor: pointer;
+}
+.ev-launch:hover { background: #26263a; }
+.ev-launch:focus-visible, .ev-btn:focus-visible, .ev-close:focus-visible { outline: 2px solid #8ab4ff; outline-offset: 2px; }
+
+/* ── Modal ────────────────────────────────────────────────────────────────── */
+.ev-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 2147483000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.65);
+    padding: 16px;
+}
+
+.ev-modal {
+    width: min(760px, 100%);
+    max-height: 100%;
+    overflow: auto;
+    background: var(--ev-panel);
+    color: var(--ev-text);
+    border-radius: 16px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+}
+
+.ev-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.ev-close {
+    width: 36px;
+    height: 36px;
+    border: 1px solid var(--ev-line);
+    border-radius: 50%;
+    background: transparent;
+    color: var(--ev-text);
+    font-size: 18px;
+    cursor: pointer;
+}
+
+/* ── Camera view ──────────────────────────────────────────────────────────── */
+.ev-viewport {
+    position: relative;
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--ev-bg);
+    aspect-ratio: 16 / 9;
+}
+
+.ev-stage, .ev-stage canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+.ev-stage canvas { object-fit: cover; }
+.ev-stage video { display: none; }
+
+.ev-loading, .ev-error {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    padding: 24px;
+    text-align: center;
+    background: var(--ev-bg);
+    font-size: 14px;
+}
+
+.ev-steps { display: flex; flex-direction: column; gap: 10px; }
+.ev-step { color: #44445a; display: flex; align-items: center; gap: 10px; }
+.ev-step.active { color: var(--ev-text); }
+.ev-step.done { color: var(--ev-muted); }
+.ev-step::before {
+    content: '';
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid currentColor;
+}
+.ev-step.active::before { border-top-color: transparent; animation: ev-spin 0.8s linear infinite; }
+.ev-step.done::before { background: #6fbf73; border-color: #6fbf73; }
+@keyframes ev-spin { to { transform: rotate(360deg); } }
+
+.ev-error p { margin: 0; max-width: 420px; line-height: 1.4; }
+
+/* Card check markers (?debug=1), positioned at the click inside .ev-viewport */
+.ev-mark {
+    position: absolute;
+    width: 2px;
+    height: 24px;
+    margin: -12px 0 0 -1px;
+    background: #ff3b3b;
+    pointer-events: none;
+}
+
+/* ── Controls ─────────────────────────────────────────────────────────────── */
+.ev-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+
+.ev-btn {
+    padding: 9px 16px;
+    border: 1px solid var(--ev-line);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--ev-text);
+    font: 500 13px/1.2 inherit;
+    font-family: inherit;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.ev-btn:hover { background: rgba(255, 255, 255, 0.1); }
+.ev-btn.selected { background: rgba(255, 255, 255, 0.16); border-color: rgba(255, 255, 255, 0.45); }
+.ev-btn.recording { color: #ef4444; border-color: rgba(239, 68, 68, 0.5); }
+.ev-btn:disabled { opacity: 0.4; cursor: default; }
+
+/* ── PD estimate ──────────────────────────────────────────────────────────── */
+.ev-pd { text-align: center; font-size: 13px; }
+.ev-pd p { margin: 4px 0; }
+.ev-pd-value { font-size: 20px; font-weight: 600; color: #fff; }
+.ev-pd-notice { font-size: 11px; color: var(--ev-muted); }
+
+.ev-debug {
+    margin: 0;
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.06);
+    color: #aaf0aa;
+    font: 12px/1.4 ui-monospace, Consolas, monospace;
+    white-space: pre-wrap;
+}
+
+.ev-privacy { margin: 0; text-align: center; font-size: 11px; color: var(--ev-muted); }
+
+/* Phones: the modal takes the whole screen and the camera keeps a portrait-friendly frame */
+@media (max-width: 600px) {
+    .ev-overlay { padding: 0; }
+    .ev-modal { width: 100%; height: 100%; border-radius: 0; }
+    .ev-viewport { aspect-ratio: 3 / 4; }
+}

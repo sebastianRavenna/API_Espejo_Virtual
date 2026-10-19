@@ -20,20 +20,19 @@ Lo opera Sebastian (Raven-Net); al inicio la digitalización es un servicio manu
 | `docs/08-bitacora.md` | Registro por sesión | Para retomar contexto de sesiones anteriores |
 | `docs/source/` | Plan, prompt inicial e instrucciones originales (congelados) | Solo como referencia histórica; manda `docs/` |
 
-## 3. Estado actual (2026-10-18)
-- **Fase:** 0 — Spike técnico, en curso. Primer día cumplido.
+## 3. Estado actual (2026-10-19)
+- **Fase:** 0 — Spike técnico, en curso.
 - **Repo:** https://github.com/sebastianRavenna/API_Espejo_Virtual (rama `main`).
-- **Hecho:** el spike está en `widget/` (MIT declarada solo en el README, ADR-023) y corre por HTTPS con certificado autofirmado (ADR-024). Tiene tres marcos de referencia (sol, acetato grueso, metálico fino), elegibles con botones, en mm y con origen en el puente, con escala calibrada por iris (ADR-025), video y anteojo sincronizados y oclusor de cabeza. El de sol está probado con cámara en PC y celular ("perfecto"). La DP estimada por iris está implementada y se muestra como DP de lejos, corregida por convergencia (ADR-027).
-- **Probado con cámara:** los tres marcos se ven bien (acetato y metal con patillas sobre el pelo al mirar abajo).
-- **Alerta de escala y DP:** la DP de Sebastian dio 58 mm (PDMeasure 58,2; Auglio, que hoy usa la óptica del piloto, 63–64), y el anteojo se vio proporcionado también en la cara de su hijo, cuando debería verse grande. La regla del iris puede no medir a la persona. Hay un modo diagnóstico (`?debug=1`) para comprobarlo. La DP de su hijo variaba 59–66 mm por estar lejos de la cámara: se subió la resolución a 1280×720, se exige un iris más grande y se rechazan las mediciones dispersas (falta probarlo). No mostrar la DP a una óptica sin validarla con un óptico.
-- **Patillas:** de costado subían en diagonal; se corrigió con una inclinación de 7° (confirmado con cámara), regulable con `?pitch=`.
-- **Límites conocidos:** de perfil completo el anteojo desaparece (MediaPipe); las patillas pasan por delante de la oreja y del pelo (backlog); el metálico tiene patillas cortas porque el archivo trae unidades incoherentes; `acetate.glb` pesa 5 MB (P-07).
-- **Esperando a Sebastian:** probar marcos y DP con la cámara; fotos de 3 marcos reales para la prueba de Hunyuan3D; abrir el issue de `LICENSE` en el repo original; decidir si nuestro repo lleva licencia (`TBD`). Pendientes abiertos: 12, entre ellos P-13 (el spike es JS + React + CRA, no TS + Vite).
+- **Hecho:** `widget/` es TypeScript + Vite, sin React (ADR-028). Genera un solo `widget.js` que inserta un botón "Probátelos" y abre el probador en un modal con Shadow DOM (ADR-029). Probado en la página de desarrollo y en una HTML pelada, y con cámara en PC y celular: funciona igual que antes (quedan ajustes finos). El motor conserva todo lo validado con cámara: escala por iris (ADR-025), DP de lejos (ADR-027), oclusores, patillas con 7° de inclinación, seis marcos (tres de Sketchfab y tres generados con Hunyuan3D-2mv).
+- **Hunyuan3D (P-02):** en Colab dio formas muy buenas en acetato (el de sol, excelente en cámara) y aceptables en metal fino. Prototipo de post-proceso en `blender/prototype_postprocess.py`.
+- **DP:** estable y coincide con una tarjeta en ~2 %; ~60,5 mm de lejos para Sebastian contra 63–64 de Auglio. No mostrarla a una óptica sin validarla con un óptico.
+- **Límites conocidos:** de perfil completo el anteojo desaparece (MediaPipe); las patillas pasan por delante de la oreja y del pelo; sin mapa de entorno los metales se ven apagados; `widget.js` pesa 656 KB (three 0.113, P-17).
+- **Esperando a Sebastian:** detallar los ajustes finos del widget; DP medida por un óptico; decidir si el diseño visual del widget pasa por Claude Design (ADR-017 dice "en código"); abrir el issue de `LICENSE` en el repo original. Pendientes abiertos: 12 (P-13 resuelto; nuevo P-17).
 
 ## 4. Próximos tres pasos
-1. Validar la DP contra la medición de un óptico. Hoy la app muestra la DP de lejos (corregida por convergencia): ~60,5 mm para Sebastian, contra 63–64 de Auglio. La regla del iris coincide con la tarjeta en ~2 %.
-2. Cerrar P-02: con cámara, "IA · Sol" salió excelente; "IA · Acetato" e "IA · Metal" quedaron bien tras corregir lentes y material (confirmado con cámara), aunque el metálico sigue más grueso que el real. Hunyuan3D-2mv en Colab sirve para acetato; el metálico fino es flojo. El prototipo `blender/prototype_postprocess.py` recorta lentes, escala a mm y ubica el puente. Nuevos pendientes: P-15 (protocolo de fotos) y P-16 (rotular modelos generados con IA).
-3. Medir peso y tiempo de carga de los GLB en el celular para decidir la compresión (P-07).
+1. Ajustes finos del widget y prueba embebido en un WordPress de prueba (cierra el empaquetado de la Fase 0).
+2. Diseño visual del widget y realismo (mapa de entorno, P-17) para el video de 30 segundos de la Fase 0.
+3. Validar la DP contra un óptico y cerrar P-02/P-07 (generación 3D y peso de los GLB).
 
 ## 5. Protocolo de trabajo
 **Al recibir un prompt:**
