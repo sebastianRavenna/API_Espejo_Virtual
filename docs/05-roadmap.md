@@ -9,9 +9,9 @@ Orden de trabajo fijo: spike técnico → flujos y esquema mínimo → piloto co
 **Tareas:**
 - [x] Verificar la licencia de `alperenuzun/basic-virtual-tryon-glasses` y copiarlo en `widget/` (ADR-020, ADR-023). Resultó JavaScript + React, no TypeScript (P-13).
 - [x] Hacerlo correr localmente por HTTPS (ADR-024). Verificado en la PC y en el celular (Sebastian, 2026-10-18).
-- [ ] Reemplazar el modelo procedural por 3 GLB genéricos (Sketchfab CC o CGTrader): uno de acetato grueso, uno metálico fino y uno de sol. `sun_glasses.glb` (sol) probado con cámara real en PC y celular; `acetate.glb` y `metal.glb` cargados con su spec y elegibles con botones, **falta probarlos con cámara**.
-- [ ] Agregar la estimación de DP con landmarks de iris. **Implementada (ADR-027); falta probarla con cámara y compararla con una DP medida por un óptico.**
-- [x] Probar Hunyuan3D multi-vista con fotos de 3 marcos y evaluar el resultado (2026-10-18, fotos de producto de Edel-Optics). Acetato: muy bien. Metálico fino: reconocible, pero más grueso que el real y con artefactos. Falta verlos en el espejo con cámara (ver `08-bitacora.md`).
+- [x] Reemplazar el modelo procedural por 3 GLB genéricos (Sketchfab CC o CGTrader): uno de acetato grueso, uno metálico fino y uno de sol. Los tres probados con cámara en PC y celular, elegibles con botones (2026-10-18).
+- [ ] Agregar la estimación de DP con landmarks de iris. **Implementada y probada con cámara (ADR-027): estable, coincide con una tarjeta en ~2 % y se muestra como DP de lejos. Falta compararla con una DP medida por un óptico (Auglio da 3 mm más).**
+- [x] Probar Hunyuan3D multi-vista con fotos de 3 marcos y evaluar el resultado (2026-10-18, fotos de producto de Edel-Optics). Acetato: muy bien. Metálico fino: reconocible, pero más grueso que el real y con artefactos. Probados en el espejo con cámara el 2026-10-19: el de sol, excelente (ver `08-bitacora.md`).
 - [ ] Empaquetar como un solo `widget.js` con Vite y probarlo embebido en una página WordPress y en una HTML pelada.
 
 **Criterio de salida:** un video de 30 segundos que le mostrarías a una óptica sin vergüenza.
