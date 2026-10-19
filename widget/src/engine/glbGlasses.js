@@ -43,7 +43,15 @@ export const FRAMES = [
         unitToMm: 140 / 18.508,
         bridge: [0, 184.45, 16.18],   // bridge wire; the model sits at head height
         rotationY: 0                  // already faces +Z
-    }
+    },
+    // Generated with Hunyuan3D-2mv from 4 product photos and post-processed by
+    // blender/prototype_postprocess.py, which already outputs ADR-015 (mm, origin at the bridge)
+    { id: 'hy-acetate', name: 'IA · Acetato', kind: 'reading', url: MODELS_URL + 'hy-acetate.glb',
+      unitToMm: 1, bridge: [0, 0, 0], rotationY: 0 },
+    { id: 'hy-metal', name: 'IA · Metal', kind: 'reading', url: MODELS_URL + 'hy-metal.glb',
+      unitToMm: 1, bridge: [0, 0, 0], rotationY: 0 },
+    { id: 'hy-sun', name: 'IA · Sol', kind: 'sun', url: MODELS_URL + 'hy-sun.glb',
+      unitToMm: 1, bridge: [0, 0, 0], rotationY: 0 }
 ];
 
 /**

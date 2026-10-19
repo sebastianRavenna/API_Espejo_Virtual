@@ -19,6 +19,13 @@ import { createCamera, createVideoBackground, createLights, createRenderer, hand
 
 export { FRAMES };
 
+// ?pitch=<degrees> overrides CFG.pitchCorrectionDeg, to tune it live with the camera
+var pitchDeg = parseFloat(new URLSearchParams(window.location.search).get('pitch'));
+if (isNaN(pitchDeg)) pitchDeg = CFG.pitchCorrectionDeg;
+var pitchCorrection = new THREE.Quaternion().setFromAxisAngle(
+    new THREE.Vector3(1, 0, 0), -pitchDeg * Math.PI / 180
+);
+
 // ── Private State ────────────────────────────────────────────────────────────
 var faceLandmarker;
 var glassesObj;
@@ -402,6 +409,11 @@ function renderPrediction() {
             new THREE.Vector3(0, 0, 1), Math.PI
         );
         targetQuat.multiply(flipZ);
+
+        // Pitch correction: the forehead–chin line leans back compared with the head's
+        // real vertical, so without this the temples rise towards the back of the head.
+        // Rotates around the model's X axis at the bridge; positive lowers the temples.
+        targetQuat.multiply(pitchCorrection);
 
         // ── Position (model origin = bridge, so anchor it on the nose bridge) ──
         var tGPos = nose.clone()

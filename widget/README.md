@@ -47,3 +47,7 @@ Si se reemplaza un archivo por otra descarga, verificar que la consola muestre e
 (`[glasses] ... size mm`): las correcciones de la spec (unidades, rotación, puente) dependen del archivo exacto.
 
 CC-BY-4.0 exige atribución: si alguno de estos modelos aparece en un video o demo, hay que acreditar al autor.
+
+Los marcos "IA · Acetato", "IA · Metal" e "IA · Sol" (`hy-acetate.glb`, `hy-metal.glb`, `hy-sun.glb`) no se bajan:
+se generan con Hunyuan3D-2mv (`notebooks/hunyuan3d_mv_test.ipynb`, en Colab) a partir de fotos de producto de uso
+interno, y se post-procesan con `blender/prototype_postprocess.py` (ver `docs/04-desarrollo.md`). No se muestran a ópticas.

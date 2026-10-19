@@ -11,7 +11,7 @@ Orden de trabajo fijo: spike técnico → flujos y esquema mínimo → piloto co
 - [x] Hacerlo correr localmente por HTTPS (ADR-024). Verificado en la PC y en el celular (Sebastian, 2026-10-18).
 - [ ] Reemplazar el modelo procedural por 3 GLB genéricos (Sketchfab CC o CGTrader): uno de acetato grueso, uno metálico fino y uno de sol. `sun_glasses.glb` (sol) probado con cámara real en PC y celular; `acetate.glb` y `metal.glb` cargados con su spec y elegibles con botones, **falta probarlos con cámara**.
 - [ ] Agregar la estimación de DP con landmarks de iris. **Implementada (ADR-027); falta probarla con cámara y compararla con una DP medida por un óptico.**
-- [ ] Probar Hunyuan3D multi-vista con fotos reales de 3 marcos y evaluar el resultado. Si el metálico fino sale mal, anotarlo: ahí entran las plantillas paramétricas como respaldo.
+- [x] Probar Hunyuan3D multi-vista con fotos de 3 marcos y evaluar el resultado (2026-10-18, fotos de producto de Edel-Optics). Acetato: muy bien. Metálico fino: reconocible, pero más grueso que el real y con artefactos. Falta verlos en el espejo con cámara (ver `08-bitacora.md`).
 - [ ] Empaquetar como un solo `widget.js` con Vite y probarlo embebido en una página WordPress y en una HTML pelada.
 
 **Criterio de salida:** un video de 30 segundos que le mostrarías a una óptica sin vergüenza.
@@ -78,6 +78,7 @@ Sin orden ni duración; cada uno entra si un cliente lo pide.
 
 ## Backlog (ideas no priorizadas)
 
+- Mapa de entorno (iluminación) en la escena: sin él, los materiales metálicos reflejan negro y se ven oscuros (visto con el marco metálico generado con IA, 2026-10-19).
 - Oclusor de orejas y pelo: las patillas quedan delante de la oreja y del pelo (prueba del 2026-10-18). El elipsoide de cabeza tapa la patilla de atrás pero no modela orejas ni volumen de pelo. Ajuste fino.
 
 - DP de cerca vs. lejos.

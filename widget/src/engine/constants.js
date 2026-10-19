@@ -51,6 +51,7 @@ export const CFG = {
     bridgeDropMm: -1,       // bridge below the nose-bridge landmark (+ = down); 2 sat low on a real face
     bridgeSideMm: 0,        // horizontal fine-tuning
     glassesScale: 1.0,      // 1 = true size; only for experiments
+    pitchCorrectionDeg: 7,  // lowers the temples; the face's forehead–chin line leans back (override: ?pitch=). 0 rose, 15 dropped, 7 confirmed on camera
     // Invisible head ellipsoid (mm, bridge frame). radiusX stays under the
     // temples' half spacing (~62–78 mm) so the near temple is never hidden.
     headOccluder: { radiusX: 64, radiusY: 110, radiusZ: 92, centerY: 20, centerZ: -100 },

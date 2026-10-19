@@ -16,6 +16,7 @@ Esta carpeta es la raíz del repo: https://github.com/sebastianRavenna/API_Espej
 ├── panel/                    # panel de ópticas (TypeScript); framework TBD
 ├── supabase/migrations/      # SQL de esquema y RLS
 ├── blender/                  # scripts de post-proceso (Python)
+├── notebooks/                # notebooks de Colab para la generación 3D (Hunyuan3D, P-02)
 └── test-pages/               # HTML pelada para probar el embed
 ```
 
@@ -64,6 +65,7 @@ Los scripts `start` y `build` se cambiaron respecto del original: pasaban `NODE_
 
 - El widget carga el GLB con `GLTFLoader` (`widget/src/engine/glbGlasses.js`). Cada modelo tiene una "spec" con las correcciones para llevarlo a ADR-015: `unitToMm`, `bridge` (punto del puente en coordenadas del archivo) y `rotationY`. Son exactamente lo que después tiene que hacer el script de Blender.
 - **Modo diagnóstico (`?debug=1`):** muestra la resolución real de la cámara, el iris en px, el ancho y el alto de cara calibrados, la escala y el giro. Tiene además una **verificación con tarjeta**: con una tarjeta tamaño ISO (85,6 mm, mostrando el dorso) apoyada plana en la frente, "Congelar" detiene la imagen; dos clics en los bordes de la tarjeta comparan su escala con la del iris y dan la DP y el ancho de cara según cada regla.
+- **Inclinación de las patillas:** `CFG.pitchCorrectionDeg` (7°) corrige que la línea frente-mentón no sea la vertical real de la cabeza. Para afinarlo con la cámara: `https://localhost:3000/?pitch=10` (se combina con `&debug=1`).
 - Los tres marcos están en `FRAMES` (`glbGlasses.js`) y se eligen con los botones "Sol", "Acetato" y "Metal". Cada GLB se baja la primera vez que se elige y queda en memoria.
 - Al cargar, la consola muestra el tamaño resultante en mm (`[glasses] ... size mm (w x h x d)`): sirve para verificar la escala.
 - La escala en pantalla sale de una regla: el diámetro del iris (11,7 mm) calibra el ancho de cara y el alto de la parte superior de la cara de la persona, en mm (medianas de 30 frames, solo con la cara de frente). En cada frame se toma la mayor de las dos escalas en píxeles, para que no se achique al girar ni al cabecear (ADR-025). El origen del modelo (puente) se apoya en el landmark 168 de MediaPipe (entrecejo, sobre el puente nasal). Los ajustes finos están en `CFG` de `widget/src/engine/constants.js`, en mm (ADR-025).
@@ -97,6 +99,27 @@ Los scripts `start` y `build` se cambiaron respecto del original: pasaban `NODE_
 - MediaPipe necesita su modelo `.task` y sus archivos WASM. `TBD`: ¿se sirven desde nuestro CDN o desde el de Google? Afecta la privacidad percibida y el costo de egreso.
 - Se publica en Cloudflare Pages (ADR-021), en `https://cdn.<dominio>/widget.js` (P-03).
 - `TBD`: versionado. Pregunta: ¿las ópticas cargan siempre `widget.js` (la última versión) o una versión fija (`widget.v1.js`)? Con la última versión, un bug llega a todos los clientes a la vez.
+
+## Generación 3D de prueba en Colab (P-02)
+
+La PC de desarrollo no tiene GPU NVIDIA (solo Intel integrada), así que Hunyuan3D se corre en Google Colab con una T4 gratuita.
+
+1. Abrir https://colab.research.google.com → *Subir* → `notebooks/hunyuan3d_mv_test.ipynb`.
+2. *Entorno de ejecución → Cambiar tipo → GPU T4*.
+3. Ejecutar las celdas en orden. En la celda 3 se sube `models-dev/hunyuan-test.zip` (fotos de prueba, fuera del repo).
+4. Revisar en la celda 4 que el fondo se haya quitado bien y en la celda 7 la forma generada; la celda 8 descarga los GLB.
+
+Notas del código de Hunyuan3D verificadas el 2026-10-18: el pipeline multivista acepta `front`, `left`, `back` y `right` (orden "front, front clockwise 90, back, front clockwise 270"); recentra cada vista por su canal alfa, así que **las fotos tienen que tener fondo transparente** (el notebook quita el blanco); solo genera forma.
+
+## Prototipo del post-proceso (sin Blender)
+
+`blender/prototype_postprocess.py` adelanta los pasos 2 a 4 del pipeline en Python (numpy, Pillow, OpenCV) sobre la salida de Hunyuan3D-2mv. Borra las lentes usando la foto de frente y lo que esa foto muestra como fondo, escala a mm con calibre y puente, pone el origen en el puente y asigna un material:
+
+```
+python blender/prototype_postprocess.py <malla.glb> <foto_frente> <salida.glb> --eye 53 --bridge 17 --material acetate_black [--keep-lenses]
+```
+
+Supuesto de escala: ancho total del frente = 2 × calibre + puente + 12 mm de terminales. Hay que portarlo al script de Blender y reemplazar el recorte por planos de vidrio limpios (ADR-015).
 
 ## Post-proceso 3D en Blender headless
 

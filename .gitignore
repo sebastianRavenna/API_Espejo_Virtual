@@ -1,3 +1,6 @@
 # Test GLB models are not versioned (ADR-026); download list in widget/README.md
 models-dev/
 widget/public/models-dev/
+
+# Python bytecode
+__pycache__/
