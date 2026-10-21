@@ -58,6 +58,38 @@ export function createLights(): THREE.Light[] {
     return [key, fill, rim, topAccent, amb];
 }
 
+/**
+ * Environment map for reflections on frames and lenses: a dim room with a bright
+ * rectangle in front of the face, like the screen the person is looking at.
+ * Without it the environment is black, metals look dull and lenses reflect nothing.
+ * The face looks towards +Z in this scene (towards the camera).
+ */
+export function createScreenEnvironment(renderer: THREE.WebGLRenderer, screenLight: number): THREE.Texture {
+    const env = new THREE.Scene();
+    env.background = new THREE.Color(0x26262c);   // dim room
+
+    const screen = new THREE.Mesh(
+        new THREE.PlaneGeometry(1.6, 1.0),
+        new THREE.MeshBasicMaterial({ color: new THREE.Color(1, 1, 1).multiplyScalar(screenLight), side: THREE.DoubleSide })
+    );
+    screen.position.set(0, 0.15, 2);              // in front of the face, slightly above eye level
+    env.add(screen);
+
+    const ceiling = new THREE.Mesh(
+        new THREE.PlaneGeometry(4, 4),
+        new THREE.MeshBasicMaterial({ color: new THREE.Color(1, 1, 1).multiplyScalar(0.5), side: THREE.DoubleSide })
+    );
+    ceiling.position.set(0, 2.5, 0);
+    ceiling.rotation.x = Math.PI / 2;
+    env.add(ceiling);
+
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    pmrem.compileCubemapShader();
+    const texture = pmrem.fromScene(env, 0.04).texture;
+    pmrem.dispose();
+    return texture;
+}
+
 /** Create the WebGL renderer; CSS sizes the canvas, so the inline style is not set. */
 export function createRenderer(video: HTMLVideoElement): THREE.WebGLRenderer {
     const r = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });

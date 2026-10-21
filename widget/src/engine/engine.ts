@@ -10,9 +10,9 @@
 import * as THREE from 'three';
 import { CFG, LM, IRIS, FACE_OVAL } from './constants';
 import { clamp, toV, eyeMid, qDelta, toPixels, median, quantile, type Points } from './helpers';
-import { FRAMES, loadGlasses } from './frames';
+import { FRAMES, loadGlasses, type TempleFade } from './frames';
 import { createDynamicFaceMesh, createHeadOccluder } from './occluder';
-import { createCamera, createVideoBackground, createLights, createRenderer } from './scene';
+import { createCamera, createVideoBackground, createLights, createRenderer, createScreenEnvironment } from './scene';
 import { getFaceLandmarker, type FaceLandmarker } from './mediapipe';
 
 export interface DebugInfo {
@@ -63,6 +63,8 @@ interface Session {
 export class TryOnEngine {
     private readonly modelsBaseUrl: string;
     private readonly pitchCorrection: THREE.Quaternion;
+    private readonly templeFade: TempleFade;
+    private readonly screenLight: number;
     private readonly frameCache = new Map<string, Promise<THREE.Group>>();
     private selectedFrameId = FRAMES[0].id;
     private glassesObj: THREE.Group | null = null;
@@ -84,8 +86,10 @@ export class TryOnEngine {
         prev: new THREE.Vector3()
     };
 
-    constructor(opts: { modelsBaseUrl: string; pitchDeg?: number }) {
+    constructor(opts: { modelsBaseUrl: string; pitchDeg?: number; templeFade?: TempleFade; screenLight?: number }) {
         this.modelsBaseUrl = opts.modelsBaseUrl;
+        this.screenLight = opts.screenLight ?? CFG.screenLight;
+        this.templeFade = opts.templeFade ?? CFG.templeFade;
         // Pitch correction: the forehead–chin line leans back compared with the head's
         // real vertical, so without this the temples rise towards the back of the head.
         // Rotates around the model's X axis at the bridge; positive lowers the temples.
@@ -113,11 +117,8 @@ export class TryOnEngine {
         const scene = new THREE.Scene();
         scene.add(sprite);
 
-        // Environment map for reflections on clearcoat / metallic surfaces
-        const pmrem = new THREE.PMREMGenerator(renderer);
-        pmrem.compileCubemapShader();
-        scene.environment = pmrem.fromScene(new THREE.Scene()).texture;
-        pmrem.dispose();
+        // Reflections: a dim room with the screen's light in front of the face
+        scene.environment = createScreenEnvironment(renderer, this.screenLight);
 
         createLights().forEach((light) => scene.add(light));
 
@@ -179,7 +180,7 @@ export class TryOnEngine {
         if (!pending) {
             const spec = FRAMES.find((f) => f.id === id);
             if (!spec) return Promise.reject(new Error(`unknown frame ${id}`));
-            pending = loadGlasses(spec, this.modelsBaseUrl).then((g) => {
+            pending = loadGlasses(spec, this.modelsBaseUrl, this.templeFade).then((g) => {
                 g.add(createHeadOccluder(CFG.headOccluder));  // follows the glasses' pose and mm scale
                 return g;
             });

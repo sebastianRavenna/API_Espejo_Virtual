@@ -63,7 +63,12 @@ export const FRAMES: FrameSpec[] = [
  * Load a GLB and wrap it so the returned group follows ADR-015.
  * Resolves with a THREE.Group whose meshes render after the occluder.
  */
-export function loadGlasses(spec: FrameSpec, modelsBaseUrl: string): Promise<THREE.Group> {
+export interface TempleFade {
+    startMm: number;   // fully visible up to this distance behind the bridge
+    endMm: number;     // fully gone from here back
+}
+
+export function loadGlasses(spec: FrameSpec, modelsBaseUrl: string, fade: TempleFade): Promise<THREE.Group> {
     const url = new URL(spec.file, modelsBaseUrl).href;
     return new Promise((resolve, reject) => {
         new GLTFLoader().load(url, (gltf) => {
@@ -77,8 +82,14 @@ export function loadGlasses(spec: FrameSpec, modelsBaseUrl: string): Promise<THR
 
             const g = new THREE.Group();
             g.add(model);
+            g.updateMatrixWorld(true);   // g sits at the origin, so matrixWorld = mesh → ADR-015 frame
             g.traverse((child) => {
-                if ((child as THREE.Mesh).isMesh) child.renderOrder = 3;
+                const mesh = child as THREE.Mesh;
+                if (!mesh.isMesh) return;
+                mesh.renderOrder = 3;
+                const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+                const faded = materials.map((m) => withTempleFade(m, mesh.matrixWorld.clone(), fade));
+                mesh.material = Array.isArray(mesh.material) ? faded : faded[0];
             });
 
             const size = new THREE.Box3().setFromObject(g).getSize(new THREE.Vector3());
@@ -86,4 +97,31 @@ export function loadGlasses(spec: FrameSpec, modelsBaseUrl: string): Promise<THR
             resolve(g);
         }, undefined, reject);
     });
+}
+
+/**
+ * Fade the temples out towards the back. Tracking only sees the face, not the
+ * ears or the hair, so a temple drawn all the way back shows on top of them.
+ * The fade is dithered (fragments discarded with a per-pixel threshold) instead
+ * of transparent, so it needs no depth sorting against the lenses.
+ * toFrame maps the mesh's own coordinates to the ADR-015 frame (mm, Z forward).
+ */
+function withTempleFade(source: THREE.Material, toFrame: THREE.Matrix4, fade: TempleFade): THREE.Material {
+    const material = source.clone();
+    material.onBeforeCompile = (shader) => {
+        shader.uniforms.uToFrame = { value: toFrame };
+        shader.uniforms.uFadeStart = { value: -fade.startMm };
+        shader.uniforms.uFadeEnd = { value: -fade.endMm };
+        shader.vertexShader = 'uniform mat4 uToFrame;\nvarying float vFrameZ;\n' + shader.vertexShader.replace(
+            '#include <begin_vertex>',
+            '#include <begin_vertex>\nvFrameZ = (uToFrame * vec4(transformed, 1.0)).z;'
+        );
+        shader.fragmentShader = 'uniform float uFadeStart;\nuniform float uFadeEnd;\nvarying float vFrameZ;\n' + shader.fragmentShader.replace(
+            'void main() {',
+            `void main() {
+    float evFade = smoothstep(uFadeEnd, uFadeStart, vFrameZ);
+    if (evFade < 1.0 && evFade < fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453)) discard;`
+        );
+    };
+    return material;
 }

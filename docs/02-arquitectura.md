@@ -51,6 +51,8 @@ Costo fijo de arranque: **USD 10/mes**. Los límites de cada plan cambian; hay q
 - **Lentes como dos superficies planas** con material vidrio (transparente para lectura, tintado para sol). No se usa la geometría de lentes que genera la IA.
 - **HTTPS obligatorio:** sin HTTPS el navegador no da acceso a la cámara.
 - **El video de la cámara no pasa por el tone mapping:** el tone mapping (ACES) es para el modelo 3D. Aplicado al video, la cara sale lavada y el anteojo parece pegado encima (visto en el spike, 2026-10-18). Además, la textura del video se declara sRGB: si no, la salida sRGB del renderer la aclara dos veces y queda pálida.
+- **Patillas que se desvanecen hacia atrás:** el seguimiento no ve orejas ni pelo, así que la patilla se difumina entre 45 y 75 mm detrás del puente para no dibujarse encima de ellos.
+- **Reflejo de la pantalla:** el entorno de reflejos simula la pantalla delante de la cara, como hacen otros probadores; sin él, metales y lentes se ven apagados.
 - **El video y el anteojo se dibujan juntos:** cada cuadro se dibuja recién cuando MediaPipe terminó de procesarlo, con el anteojo ya ubicado. Si el video se dibuja apenas llega y el anteojo después, el anteojo va a destiempo al girar (visto en el spike).
 - **La regla de escala es el iris:** el mismo diámetro de 11,7 mm que usa la DP convierte milímetros del modelo a píxeles de pantalla (ADR-025).
 

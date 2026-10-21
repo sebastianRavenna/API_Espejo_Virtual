@@ -29,6 +29,13 @@ Registro cronológico por sesión. La entrada más nueva va arriba.
 **Pendiente**
 - Probar en WordPress. Diseño visual del widget antes del video de 30 segundos.
 
+**Ajustes finos (pedidos de Sebastian tras la prueba con cámara)**
+- **ADR-030:** el diseño visual del widget pasa a Claude Design (reemplaza en parte a ADR-017).
+- **Patillas sobre el pelo o la oreja:** el seguimiento solo ve la cara, no orejas ni pelo, así que los oclusores invisibles no alcanzan. Técnica habitual en probadores: **desvanecer las patillas hacia atrás**. Se hace en el shader de cada material: entre 45 y 75 mm detrás del puente, la patilla desaparece con un difuminado (fragmentos descartados con un umbral por píxel, sin transparencia, así no hay problemas de orden con las lentes). Valores en `CFG.templeFade`, ajustables con `?fade=45,75`.
+- **Reflejo de la pantalla (como Fittingbox):** el mapa de entorno estaba vacío (negro). Ahora es una habitación tenue con un rectángulo luminoso adelante (la pantalla) y un techo suave (`createScreenEnvironment`). En las lentes de sol aparece un reflejo suave arriba y el marco gana brillo. Intensidad `CFG.screenLight` = 4 (con 2,5 casi no se veía; con 6 el metal rosado se veía blanco), ajustable con `?light=`.
+- Verificado sin cara en el panel: el motor congelado, con el anteojo ubicado a mano, muestra las patillas desvaneciéndose y el reflejo en las lentes. **Confirmado por Sebastian con cámara: quedan bien con los valores por defecto (45–75 mm, luz 4).**
+- **DP:** en el celular le dio 62 mm y en la PC 58–59. Se le explicó qué es "(de lejos)". La diferencia entre dispositivos (otra cámara, otra óptica, otra distancia) supera lo que corrige la convergencia. Se le pidieron los números de `?debug=1` en el celular para separar la causa.
+
 ---
 
 ## 2026-10-18 — Sesión 2 (continuación): otros dos marcos y DP

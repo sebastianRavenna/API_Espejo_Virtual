@@ -5,7 +5,7 @@
  * only when the modal opens and is switched off when it closes.
  */
 import { TryOnEngine, type PdResult, type PdStatus, type DebugInfo } from '../engine/engine';
-import { FRAMES } from '../engine/frames';
+import { FRAMES, type TempleFade } from '../engine/frames';
 import { CFG } from '../engine/constants';
 import css from './styles.css?inline';
 
@@ -26,6 +26,8 @@ export interface WidgetOptions {
     label: string;
     debug: boolean;
     pitchDeg?: number;
+    templeFade?: TempleFade;
+    screenLight?: number;
 }
 
 interface CardClick { x: number; y: number; cssToVideo: number; }
@@ -46,7 +48,9 @@ export class EspejoWidget {
 
     constructor(host: HTMLElement, opts: WidgetOptions) {
         this.opts = opts;
-        this.engine = new TryOnEngine({ modelsBaseUrl: opts.modelsBaseUrl, pitchDeg: opts.pitchDeg });
+        this.engine = new TryOnEngine({ modelsBaseUrl: opts.modelsBaseUrl, pitchDeg: opts.pitchDeg, templeFade: opts.templeFade, screenLight: opts.screenLight });
+        // Diagnostics: reach the engine from the browser console
+        if (opts.debug) (window as unknown as { __espejoEngine: TryOnEngine }).__espejoEngine = this.engine;
         this.root = host.attachShadow({ mode: 'open' });
         this.root.innerHTML = this.template();
         const q = (sel: string) => this.root.querySelector(sel) as HTMLElement;

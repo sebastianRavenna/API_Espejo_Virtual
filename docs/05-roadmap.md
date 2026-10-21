@@ -78,7 +78,6 @@ Sin orden ni duración; cada uno entra si un cliente lo pide.
 
 ## Backlog (ideas no priorizadas)
 
-- Mapa de entorno (iluminación) en la escena: sin él, los materiales metálicos reflejan negro y se ven oscuros (visto con el marco metálico generado con IA, 2026-10-19).
 - Oclusor de orejas y pelo: las patillas quedan delante de la oreja y del pelo (prueba del 2026-10-18). El elipsoide de cabeza tapa la patilla de atrás pero no modela orejas ni volumen de pelo. Ajuste fino.
 
 - DP de cerca vs. lejos.

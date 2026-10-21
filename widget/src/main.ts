@@ -37,13 +37,18 @@ function mount(script: HTMLScriptElement | null): void {
     else if (script?.parentNode) script.parentNode.insertBefore(host, script.nextSibling);
     else document.body.appendChild(host);
 
+    // Live tuning from the page URL: ?pitch=<degrees>, ?fade=<start>,<end> (mm), ?light=<n>, ?debug=1
     const params = new URLSearchParams(location.search);
     const pitch = parseFloat(params.get('pitch') ?? '');
+    const [fadeStart, fadeEnd] = (params.get('fade') ?? '').split(',').map(parseFloat);
+    const light = parseFloat(params.get('light') ?? '');
     new EspejoWidget(host, {
         modelsBaseUrl: modelsBaseUrl(script),
         label: script?.dataset.label || 'Probátelos',
         debug: params.has('debug'),
-        pitchDeg: Number.isFinite(pitch) ? pitch : undefined
+        pitchDeg: Number.isFinite(pitch) ? pitch : undefined,
+        templeFade: Number.isFinite(fadeStart) && Number.isFinite(fadeEnd) ? { startMm: fadeStart, endMm: fadeEnd } : undefined,
+        screenLight: Number.isFinite(light) ? light : undefined
     });
 }
 

@@ -26,12 +26,13 @@ Lo opera Sebastian (Raven-Net); al inicio la digitalización es un servicio manu
 - **Hecho:** `widget/` es TypeScript + Vite, sin React (ADR-028). Genera un solo `widget.js` que inserta un botón "Probátelos" y abre el probador en un modal con Shadow DOM (ADR-029). Probado en la página de desarrollo y en una HTML pelada, y con cámara en PC y celular: funciona igual que antes (quedan ajustes finos). El motor conserva todo lo validado con cámara: escala por iris (ADR-025), DP de lejos (ADR-027), oclusores, patillas con 7° de inclinación, seis marcos (tres de Sketchfab y tres generados con Hunyuan3D-2mv).
 - **Hunyuan3D (P-02):** en Colab dio formas muy buenas en acetato (el de sol, excelente en cámara) y aceptables en metal fino. Prototipo de post-proceso en `blender/prototype_postprocess.py`.
 - **DP:** estable y coincide con una tarjeta en ~2 %; ~60,5 mm de lejos para Sebastian contra 63–64 de Auglio. No mostrarla a una óptica sin validarla con un óptico.
-- **Límites conocidos:** de perfil completo el anteojo desaparece (MediaPipe); las patillas pasan por delante de la oreja y del pelo; sin mapa de entorno los metales se ven apagados; `widget.js` pesa 656 KB (three 0.113, P-17).
-- **Esperando a Sebastian:** detallar los ajustes finos del widget; DP medida por un óptico; decidir si el diseño visual del widget pasa por Claude Design (ADR-017 dice "en código"); abrir el issue de `LICENSE` en el repo original. Pendientes abiertos: 12 (P-13 resuelto; nuevo P-17).
+- **Ajustes finos:** las patillas se desvanecen hacia atrás (para no pasar sobre oreja y pelo) y hay un reflejo de pantalla en marcos y lentes; confirmados con cámara. Ajustables con `?fade=` y `?light=`.
+- **Límites conocidos:** de perfil completo el anteojo desaparece (MediaPipe); la DP varía entre dispositivos (62 en celular, 58–59 en PC); `widget.js` pesa 656 KB (three 0.113, P-17).
+- **Esperando a Sebastian:** detallar los ajustes finos del widget; DP medida por un óptico; números de `?debug=1` en el celular para la DP; abrir el issue de `LICENSE` en el repo original. Pendientes abiertos: 12 (P-13 resuelto; nuevo P-17).
 
 ## 4. Próximos tres pasos
 1. Ajustes finos del widget y prueba embebido en un WordPress de prueba (cierra el empaquetado de la Fase 0).
-2. Diseño visual del widget y realismo (mapa de entorno, P-17) para el video de 30 segundos de la Fase 0.
+2. Diseño visual del widget en Claude Design (ADR-030) para el video de 30 segundos de la Fase 0.
 3. Validar la DP contra un óptico y cerrar P-02/P-07 (generación 3D y peso de los GLB).
 
 ## 5. Protocolo de trabajo

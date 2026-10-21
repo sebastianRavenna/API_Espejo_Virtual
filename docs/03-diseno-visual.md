@@ -3,7 +3,7 @@
 Reglas del plan sobre diseño:
 
 - La UI del **panel** se diseña con Claude Design recién en la Fase 3, cuando las tablas estén cerradas. Hasta entonces el panel es mínimo y funcional.
-- La UI del **widget** se hace en código, sobre el canvas 3D, no en mockups.
+- La UI del **widget** se diseña con Claude Design y después se implementa en código (ADR-030; antes, ADR-017 decía "en código, sin mockups").
 
 Este documento lista qué pantallas existen y qué datos muestra cada una. Lo visual (colores, tipografía, layout) está casi todo en `TBD`.
 

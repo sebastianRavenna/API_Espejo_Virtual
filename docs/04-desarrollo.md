@@ -114,7 +114,7 @@ widget/
 - Vite empaqueta todo en **un solo `widget.js`** (modo librería, formato IIFE): hoy pesa 656 KB (169 KB comprimido), casi todo three.js. Actualizar three (P-17) e importar solo lo que se usa debería achicarlo.
 - El script se ubica a sí mismo, inserta un botón **"Probátelos"** justo después de su `<script>` (o dentro de `data-target`) y abre el probador en un **modal** (ADR-029). Todo vive en un **Shadow DOM** (`<espejo-virtual>`).
 - Atributos del `<script>`: `data-key` (clave del tenant; todavía sin uso), `data-label` (texto del botón), `data-target` (selector donde montarlo) y `data-models` (URL base de los GLB; por defecto, `models-dev/` al lado de `widget.js`).
-- En la URL de la página: `?debug=1` muestra el diagnóstico de la regla del iris y la verificación con tarjeta; `?pitch=<grados>` ajusta la inclinación de las patillas.
+- En la URL de la página: `?debug=1` muestra el diagnóstico de la regla del iris y la verificación con tarjeta (y deja el motor en `window.__espejoEngine`); `?pitch=<grados>` ajusta la inclinación de las patillas; `?fade=<inicio>,<fin>` (mm) el desvanecido de las patillas; `?light=<n>` la intensidad del reflejo de la pantalla.
 - MediaPipe necesita su modelo `.task` y sus archivos WASM. `TBD`: ¿se sirven desde nuestro CDN o desde el de Google? Afecta la privacidad percibida y el costo de egreso.
 - Se publica en Cloudflare Pages (ADR-021), en `https://cdn.<dominio>/widget.js` (P-03).
 - `TBD`: versionado. Pregunta: ¿las ópticas cargan siempre `widget.js` (la última versión) o una versión fija (`widget.v1.js`)? Con la última versión, un bug llega a todos los clientes a la vez.

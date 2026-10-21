@@ -63,6 +63,12 @@ export const CFG = {
     // Invisible head ellipsoid (mm, bridge frame). radiusX stays under the
     // temples' half spacing (~62–78 mm) so the near temple is never hidden.
     headOccluder: { radiusX: 64, radiusY: 110, radiusZ: 92, centerY: 20, centerZ: -100 } as HeadOccluderConfig,
+    // Temples fade out between these distances behind the bridge (mm), before the
+    // ear and the hair, which tracking cannot see (override: ?fade=45,75)
+    templeFade: { startMm: 45, endMm: 75 },
+    // Brightness of the screen reflected on frames and lenses (override: ?light=).
+    // 2.5 was barely visible, 6 turned the rose-gold metal almost white
+    screenLight: 4,
     // PD estimate (ADR-027): median of valid frames, looking at the camera, close enough
     pd: {
         frames: 45,         // valid frames to collect (~1.5 s at 30 fps)

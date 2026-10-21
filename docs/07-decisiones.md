@@ -119,7 +119,7 @@ Para revertir una decisión hay que hacerlo explícitamente: se agrega una entra
 - **Consecuencias:** hay que revisar la licencia del repo al clonarlo (resuelto en ADR-023). Dónde vive el código es P-06.
 - **Nota (2026-10-18):** el repo original no es TypeScript: es JavaScript con React 16 y react-scripts 3.4. El plan lo describía mal. La migración queda como P-13.
 
-### ADR-017 · Orden de trabajo y diseño (plan)
+### ADR-017 · Orden de trabajo y diseño (plan; la parte del widget, reemplazada por ADR-030)
 - **Fecha:** 2026-10-18
 - **Decisión:** spike → flujos y esquema → piloto → producto vendible → pipeline automatizado. La UI del panel se diseña con Claude Design recién con las tablas cerradas (Fase 3). La UI del widget se hace en código sobre el canvas 3D, no en mockups.
 - **Contexto:** no diseñar sobre supuestos.
@@ -220,6 +220,13 @@ Para revertir una decisión hay que hacerlo explícitamente: se agrega una entra
 - **Contexto:** `03-diseno-visual.md` lo dejaba abierto: modal o incrustado en la página.
 - **Alternativas descartadas:** incrustado en un recuadro de la página (ocupa espacio, depende del diseño de cada sitio, y hay que decidir cuándo pedir la cámara).
 - **Consecuencias:** en celular el modal ocupa toda la pantalla. Para WooCommerce alcanza con pegar el script en la ficha de producto. La UI actual es funcional y mínima (ADR-017); el diseño visual se trabaja antes del video de la Fase 0.
+
+### ADR-030 · La UI del widget también se diseña con Claude Design (reemplaza en parte a ADR-017)
+- **Fecha:** 2026-10-19 (decidida por Sebastian)
+- **Decisión:** el diseño visual del widget (botón, modal, controles, estados y mensajes) se hace en Claude Design y después se implementa en código, igual que el del panel. Lo que funciona hoy queda como base funcional.
+- **Contexto:** ADR-017 decía que la UI del widget se hacía directamente en código, sobre el canvas, sin mockups. El widget es lo que va a ver la óptica en el video de la Fase 0 y lo que ve su cliente final.
+- **Alternativas descartadas:** seguir diseñando el widget directo en código.
+- **Consecuencias:** antes del video de la Fase 0 hay un paso de diseño en Claude Design. Los estilos están en un solo archivo (`widget/src/ui/styles.css`, en Shadow DOM), así que el rediseño no toca el motor. El diseño del panel sigue esperando a que las tablas estén cerradas (Fase 3), como dice ADR-017.
 
 ---
 
