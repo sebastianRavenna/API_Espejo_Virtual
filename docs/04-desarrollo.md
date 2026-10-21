@@ -15,7 +15,8 @@ Esta carpeta es la raíz del repo: https://github.com/sebastianRavenna/API_Espej
 ├── test-pages/               # HTML pelada para probar el embed del build
 ├── worker/                   # endpoint público (Cloudflare Worker, TypeScript)
 ├── panel/                    # panel de ópticas (TypeScript); framework TBD
-├── supabase/migrations/      # SQL de esquema y RLS
+├── supabase/migrations/      # SQL de esquema y RLS (fuente de verdad del esquema)
+├── supabase/tests/           # prueba de RLS y funciones sobre un Postgres local
 ├── blender/                  # scripts de post-proceso (Python)
 ├── notebooks/                # notebooks de Colab para la generación 3D (Hunyuan3D, P-02)
 ```
@@ -60,7 +61,8 @@ Todos dentro de `widget/`:
 | Build de `widget.js` | `npm run build` → `widget/dist/widget.js` (+ `dist/models-dev/`) |
 | Probar el build en una HTML pelada | `npm run preview:plain` → `https://localhost:4173` (sirve `test-pages/index.html` junto a `dist/widget.js`) |
 | Dev del Worker | `TBD` |
-| Aplicar migraciones | `TBD` |
+| Aplicar migraciones | Con el conector de Supabase (`apply_migration`) o pegando el archivo de `supabase/migrations/` en el SQL Editor, en orden. La CLI de Supabase no está en el stack. |
+| Probar migraciones en local | Postgres común (sin Docker): ver el encabezado de `supabase/tests/rls_smoke.sql`. `local_stub.sql` imita los roles y el esquema `auth` de Supabase. |
 | Post-proceso de un marco | `python blender/prototype_postprocess.py …` (prototipo, ver más abajo) |
 
 ## Estructura de `widget/`

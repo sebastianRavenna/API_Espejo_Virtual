@@ -276,6 +276,13 @@ Para revertir una decisión hay que hacerlo explícitamente: se agrega una entra
 - **Alternativas descartadas:** clave de servicio como secreto del Worker (opción a).
 - **Consecuencias:** toda la lógica de validación vive en SQL (`get_catalog`, `log_events`) y se prueba en la base; el Worker queda como pasamanos con caché y CORS.
 
+### ADR-037 · Modelo de datos v2 (amplía ADR-012)
+- **Fecha:** 2026-10-21 (aprobado por Sebastian)
+- **Decisión:** el esquema es el "Modelo de datos v2" de `02-arquitectura.md`: las mismas tres tablas de ADR-012 con más columnas (rutas de R2 en vez de URLs, `check` en los estados, motivo de rechazo, registro de la revisión, marca de IA, visibilidad y orden, `render_params`, sesión anónima y dispositivo en los eventos), las funciones `get_catalog` y `log_events`, y permisos explícitos. Lo de la Fase 3 (miembros, cobros, variantes) queda esbozado y no se migra.
+- **Contexto:** Sebastian pidió pensar la base completa antes de escribir SQL.
+- **Alternativas descartadas:** el esquema del plan tal cual (sin lugar para el motivo de rechazo, URLs atadas a un dominio que todavía no existe); migrar ya las tablas de la Fase 3 (contra ADR-012).
+- **Consecuencias:** primera migración en `supabase/migrations/20261021000000_initial_schema.sql`, probada en un Postgres local con `supabase/tests/`. **Al 2026-10-21 no está aplicada en Supabase:** el conector de Supabase de esta sesión solo ve la organización Raven-Net y no el proyecto nuevo de "Produccion de Apps".
+
 ---
 
 ## Pendientes de decisión
@@ -284,7 +291,7 @@ Para revertir una decisión hay que hacerlo explícitamente: se agrega una entra
 |---|---|---|---|---|
 | ~~P-01~~ | ~~Hosting de estáticos~~ | **Resuelto → ADR-021 (Cloudflare Pages)** | | |
 | P-02 | Generación 3D | Hunyuan3D en Colab/Kaggle / Tripo o Hunyuan por API | **Prueba del 2026-10-18:** Hunyuan3D-2mv en Colab gratuito sirve para acetato (forma muy buena) y es aceptable para metal fino (más grueso que el real, con artefactos; requiere revisión y quizá plantilla). Recomendación: seguir con Hunyuan3D-2mv en Colab para el piloto (costo cero, ~minutos por marco más la sesión), con fotos ortogonales (P-15) y el post-proceso de lentes. Probado en el espejo el 2026-10-19: el de sol, excelente; el de acetato, bien tras limpiar las lentes; el metálico fino, flojo. Falta evaluar textura (Paint). Confirmar la licencia (P-16 y la inconsistencia de `setup.py`). | Fase 2 |
-| P-03 | Dominio del producto | — (el plan usa `cdn.tuproducto.com`) / **subdominio de `raven-net.com.ar`** (propuesta de Sebastian, 2026-10-21) | **El subdominio sirve y no cuesta nada** (por ejemplo `espejo.raven-net.com.ar` para el Worker y `cdn.espejo.raven-net.com.ar` para R2 y `widget.js`). Condición: los dominios propios de R2 y de Workers exigen que el DNS de `raven-net.com.ar` esté en la misma cuenta de Cloudflare (mudar los nameservers es gratis; el modo "solo CNAME" es del plan Business). Contra: el producto queda con la marca Raven-Net en el snippet; si después se elige un nombre comercial, hay que cambiar el snippet en cada óptica. Hasta resolverlo se trabaja con `*.workers.dev` y la URL de desarrollo de R2; por eso la base guarda rutas de R2 y no URLs completas. | Fase 2 (antes de embeber en el sitio de la óptica) |
+| P-03 | Nombre comercial y dominio del producto | Subdominio de `raven-net.com.ar` / dominio `.com.ar` propio | **Decidido por Sebastian (2026-10-21): no se usa `raven-net.com.ar`** (su DNS está en Vercel, y los dominios propios de R2 y Workers piden el DNS en Cloudflare). Cuando haga falta, se registra un `.com.ar` nuevo, después de elegir el nombre del producto. Costo: registro anual en NIC Argentina (verificar el valor). Para que R2 y el Worker lo usen, los nameservers del dominio nuevo apuntan a Cloudflare (gratis). Hasta entonces: `*.workers.dev` y la URL de desarrollo de R2; la base guarda rutas, así que cambiar de dominio no toca los datos. | Fase 2 (antes de embeber en el sitio de la óptica) |
 | ~~P-04~~ | ~~Escritura de `try_on_events` y credencial del Worker~~ | **Resuelto → ADR-036 (`anon` + funciones `security definer`)** | | |
 | ~~P-05~~ | ~~Valores de `frames.kind`~~ | **Resuelto → ADR-022 (`sun / reading`)** | | |
 | ~~P-06~~ | ~~Dónde vive el código del spike~~ | **Resuelto → ADR-020 (`widget/` en este repo)** | | |

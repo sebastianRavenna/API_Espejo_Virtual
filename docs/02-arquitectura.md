@@ -166,9 +166,9 @@ create policy events_owner_select on try_on_events for select
 
 Una función `security definer`, sin acceso directo de `anon` a las tablas (ADR-036). El detalle está en "Modelo de datos v2" más abajo.
 
-## Modelo de datos v2 (propuesta del 2026-10-21, para revisar con Sebastian)
+## Modelo de datos v2 (aprobado el 2026-10-21, ADR-037)
 
-**Estado:** borrador; no hay nada migrado. Reemplaza al esquema del plan de arriba cuando Sebastian lo apruebe.
+**Estado:** aprobado por Sebastian; reemplaza al esquema del plan de arriba. Implementado en `supabase/migrations/20261021000000_initial_schema.sql` y probado en un Postgres local (`supabase/tests/rls_smoke.sql`). Aplicarlo en el proyecto de Supabase está pendiente (ver ADR-037).
 
 **Criterio:** se piensa en papel la base de todas las fases, para no encerrarse, pero la primera migración crea solo lo que necesita el piloto (ADR-012). Lo de la Fase 3 queda esbozado y se migra cuando haga falta.
 
@@ -259,7 +259,8 @@ create index try_on_events_tenant_time_idx on try_on_events (tenant_id, created_
 |---|---|---|
 | `is_operator()` | RLS | `app_metadata.role = 'operator'` (ADR-035). |
 | `get_catalog(p_key text, p_origin_host text) returns jsonb` | Worker, con `anon` | Si la clave existe, el host está en `allowed_domains` (exacto o comodín) y el estado es `trial` o `active`: `{ brand_color, frames: [...] }` con los marcos `ready` y visibles, ordenados por `sort_order`. Si no: `{ frames: [] }`. **No devuelve la lista de dominios**: la comparación se hace adentro. |
-| `log_events(p_key text, p_origin_host text, p_events jsonb)` | Worker, con `anon` (Fase 2) | Mismas validaciones; inserta el lote (tope de 50 eventos por llamada) y descarta los `frame_id` que no sean del tenant. |
+| `resolve_tenant(p_key text, p_origin_host text)` | Solo las dos funciones de abajo (sin `execute` para `anon`) | Devuelve el tenant si la clave existe, el host está permitido (exacto, o `*.dominio` para subdominios; sin distinguir mayúsculas) y no está suspendido. |
+| `log_events(p_key text, p_origin_host text, p_session_id uuid, p_device text, p_events jsonb) returns int` | Worker, con `anon` (Fase 2) | Mismas validaciones; inserta el lote (tope de 50 eventos por llamada), descarta los eventos con nombre inválido o con `frame_id` de otro tenant y devuelve cuántos guardó. |
 | `set_updated_at()` | Trigger | Actualiza `updated_at`. |
 
 Cada marco de `get_catalog` trae `id, name, kind, eye_size_mm, bridge_mm, temple_mm, glb_path, thumbnail_path, render_params, ai_generated`. El Worker convierte las rutas en URLs.

@@ -4,6 +4,20 @@ Registro cronológico por sesión. La entrada más nueva va arriba.
 
 ---
 
+## 2026-10-21 — Sesión 6 (continuación): primera migración
+
+**Qué se hizo**
+- Sebastian aprobó el modelo de datos v2 (**ADR-037**) y creó el proyecto en "Produccion de Apps".
+- `supabase/migrations/20261021000000_initial_schema.sql`: las tres tablas con `check`, RLS por operación (la óptica lee lo suyo, solo el operador escribe), `is_operator()`, `resolve_tenant()` (interna), `get_catalog()` y `log_events()` como `security definer` con `search_path` vacío, `updated_at` por trigger y permisos explícitos (`anon` solo ejecuta las dos funciones públicas).
+- Se probó en un Postgres 16 local, con un stub de los roles y del esquema `auth` de Supabase (`supabase/tests/`). Pasaron las 14 pruebas: no se puede publicar un marco sin revisión, el formato de los dominios se valida, el comodín funciona y un sufijo engañoso (`evil-optica-a.com.ar`) no pasa, una clave mala, un dominio ajeno o un tenant suspendido devuelven catálogo vacío, `anon` no lee tablas, la óptica ve solo lo suyo y no escribe, el operador ve y escribe todo, y `log_events` descarta los eventos inválidos y los marcos de otro tenant.
+- **No se aplicó en Supabase:** el conector de esta sesión solo ve la organización Raven-Net.
+- P-03: no se usa `raven-net.com.ar` (DNS en Vercel); más adelante, un `.com.ar` nuevo, una vez que el producto tenga nombre.
+
+**Pendiente**
+- Acceso del conector a "Produccion de Apps", o pegar la migración en el SQL Editor; después, advisors de seguridad y tenant de desarrollo.
+
+---
+
 ## 2026-10-21 — Sesión 6: arranque del backend (modelo de datos, sin código)
 
 **Qué se hizo**
