@@ -29,8 +29,9 @@ Orden de trabajo fijo: spike técnico → flujos y esquema mínimo → piloto co
 - [x] Cerrar el modelo de datos v2 con Sebastian (ADR-037).
 - [x] Crear el proyecto Supabase en la organización gratuita (ADR-034; lo creó Sebastian).
 - [x] Escribir la primera migración (`tenants`, `frames`, `try_on_events`, RLS, permisos, `get_catalog`, `log_events`) y probarla en local (`supabase/tests/`).
-- [ ] Aplicarla en el proyecto (falta acceso del conector a "Produccion de Apps", o pegarla en el SQL Editor) y correr los advisors de seguridad.
-- [ ] Cargar un tenant de desarrollo con los seis marcos de prueba.
+- [x] Aplicarla en el proyecto (Sebastian, por el SQL Editor).
+- [ ] Correr el Security Advisor del dashboard y cargar el tenant de desarrollo (`supabase/seed_dev.sql`, que devuelve la `api_key`).
+- [ ] Conectar Claude con Cloudflare: token y red del entorno (ver `04-desarrollo.md`).
 - [x] Resolver P-04 (ADR-036), P-05 (ADR-022) y P-08 (ADR-035).
 - [ ] Crear el bucket de R2. Mientras no esté el dominio (P-03), con la URL de desarrollo de R2.
 - [ ] Worker con `GET /v1/catalog`.

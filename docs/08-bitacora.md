@@ -13,8 +13,12 @@ Registro cronológico por sesión. La entrada más nueva va arriba.
 - **No se aplicó en Supabase:** el conector de esta sesión solo ve la organización Raven-Net.
 - P-03: no se usa `raven-net.com.ar` (DNS en Vercel); más adelante, un `.com.ar` nuevo, una vez que el producto tenga nombre.
 
+- No se pueden conectar las dos organizaciones de Supabase a la vez y Sebastian prefiere dejar Raven-Net. **Sebastian aplicó la migración en el SQL Editor.** Claude no la puede verificar.
+- `supabase/seed_dev.sql`: un tenant de desarrollo con los seis marcos, probado en local (`get_catalog` devuelve los seis en orden).
+- Conexión con Cloudflare: hoy la red del entorno bloquea `api.cloudflare.com`. Pasos en `04-desarrollo.md` (token en la configuración del entorno y dominio permitido).
+
 **Pendiente**
-- Acceso del conector a "Produccion de Apps", o pegar la migración en el SQL Editor; después, advisors de seguridad y tenant de desarrollo.
+- Sebastian: correr `seed_dev.sql` y el Security Advisor; cargar el token de Cloudflare y habilitar la red.
 
 ---
 

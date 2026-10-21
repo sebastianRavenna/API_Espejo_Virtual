@@ -281,7 +281,7 @@ Para revertir una decisión hay que hacerlo explícitamente: se agrega una entra
 - **Decisión:** el esquema es el "Modelo de datos v2" de `02-arquitectura.md`: las mismas tres tablas de ADR-012 con más columnas (rutas de R2 en vez de URLs, `check` en los estados, motivo de rechazo, registro de la revisión, marca de IA, visibilidad y orden, `render_params`, sesión anónima y dispositivo en los eventos), las funciones `get_catalog` y `log_events`, y permisos explícitos. Lo de la Fase 3 (miembros, cobros, variantes) queda esbozado y no se migra.
 - **Contexto:** Sebastian pidió pensar la base completa antes de escribir SQL.
 - **Alternativas descartadas:** el esquema del plan tal cual (sin lugar para el motivo de rechazo, URLs atadas a un dominio que todavía no existe); migrar ya las tablas de la Fase 3 (contra ADR-012).
-- **Consecuencias:** primera migración en `supabase/migrations/20261021000000_initial_schema.sql`, probada en un Postgres local con `supabase/tests/`. **Al 2026-10-21 no está aplicada en Supabase:** el conector de Supabase de esta sesión solo ve la organización Raven-Net y no el proyecto nuevo de "Produccion de Apps".
+- **Consecuencias:** primera migración en `supabase/migrations/20261021000000_initial_schema.sql`, probada en un Postgres local con `supabase/tests/`. **Aplicada por Sebastian en el SQL Editor el 2026-10-21.** El conector de Supabase de Claude queda en la organización Raven-Net (no se pueden conectar las dos a la vez y Sebastian prefiere esa), así que Claude no ve el proyecto del Espejo: las migraciones, los datos de prueba y los advisors los corre Sebastian desde el dashboard, con los archivos de `supabase/`.
 
 ---
 

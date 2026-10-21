@@ -31,6 +31,7 @@ Esta carpeta es la raíz del repo: https://github.com/sebastianRavenna/API_Espej
 - **HTTPS local es obligatorio:** sin HTTPS no hay cámara. `localhost` cuenta como contexto seguro en el escritorio, pero desde el celular por la LAN hace falta HTTPS de verdad (ADR-024).
 - **MediaPipe** no se instala por npm: el widget lo baja en tiempo de ejecución de `unpkg.com` (`@mediapipe/tasks-vision@0.10.7`, JS + WASM) y el modelo `face_landmarker.task` de `storage.googleapis.com`. Hace falta internet. Si conviene servirlo desde nuestro CDN sigue `TBD` (ver "Build y publicación").
 - Variables de entorno con secretos (URL de Supabase, claves, bucket de R2): `TBD`. Nunca se commitean.
+- **Cloudflare desde las sesiones de Claude Code en la nube:** el entorno necesita (1) las variables `CLOUDFLARE_API_TOKEN` y `CLOUDFLARE_ACCOUNT_ID`, cargadas en la configuración del entorno, nunca en el chat ni en el repo; y (2) que la red permita `api.cloudflare.com` (y `*.workers.dev` y `*.r2.dev` para probar lo desplegado). El token es "de cuenta", con los permisos de la plantilla "Edit Cloudflare Workers" más "Workers R2 Storage: Edit", limitado a la cuenta del proyecto. `wrangler`, la CLI oficial de Workers, va como dependencia de desarrollo de `worker/`. Alternativa sin token: Sebastian despliega desde su PC con `npx wrangler login`.
 
 ### Probar en la PC
 
@@ -62,6 +63,7 @@ Todos dentro de `widget/`:
 | Probar el build en una HTML pelada | `npm run preview:plain` → `https://localhost:4173` (sirve `test-pages/index.html` junto a `dist/widget.js`) |
 | Dev del Worker | `TBD` |
 | Aplicar migraciones | Con el conector de Supabase (`apply_migration`) o pegando el archivo de `supabase/migrations/` en el SQL Editor, en orden. La CLI de Supabase no está en el stack. |
+| Datos de desarrollo | `supabase/seed_dev.sql` en el SQL Editor: crea un tenant `active` (localhost) con los seis marcos de prueba y devuelve su `api_key`. |
 | Probar migraciones en local | Postgres común (sin Docker): ver el encabezado de `supabase/tests/rls_smoke.sql`. `local_stub.sql` imita los roles y el esquema `auth` de Supabase. |
 | Post-proceso de un marco | `python blender/prototype_postprocess.py …` (prototipo, ver más abajo) |
 
