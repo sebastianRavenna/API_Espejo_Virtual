@@ -20,6 +20,10 @@ export interface FrameSpec {
     unitToMm: number;
     bridge: [number, number, number];
     rotationY: number;
+    // Materials that are the lens glass. Models from blender/prototype_postprocess.py
+    // name theirs "lens"; downloaded ones may use another name, or have the lens
+    // fused with the frame (then there is no glass to reflect on).
+    lensMaterials?: string[];
 }
 
 export const FRAMES: FrameSpec[] = [
@@ -39,7 +43,8 @@ export const FRAMES: FrameSpec[] = [
         file: 'acetate.glb',
         unitToMm: 100,                  // authored in decimetres (front 140.6 mm, temples 133 mm)
         bridge: [0, 0.121, 0.070],      // back face of the acetate bridge, centred
-        rotationY: 0                    // already faces +Z
+        rotationY: 0,                   // already faces +Z
+        lensMaterials: ['Frame.1']      // the transparent lens material of this file
     },
     {
         id: 'metal',
@@ -59,16 +64,22 @@ export const FRAMES: FrameSpec[] = [
     { id: 'hy-sun', name: 'IA · Sol', kind: 'sun', file: 'hy-sun.glb', unitToMm: 1, bridge: [0, 0, 0], rotationY: 0 }
 ];
 
-/**
- * Load a GLB and wrap it so the returned group follows ADR-015.
- * Resolves with a THREE.Group whose meshes render after the occluder.
- */
 export interface TempleFade {
     startMm: number;   // fully visible up to this distance behind the bridge
     endMm: number;     // fully gone from here back
 }
 
-export function loadGlasses(spec: FrameSpec, modelsBaseUrl: string, fade: TempleFade): Promise<THREE.Group> {
+/** Strength of the lens reflection, by frame kind. */
+export interface LensReflect {
+    sun: number;
+    reading: number;
+}
+
+/**
+ * Load a GLB and wrap it so the returned group follows ADR-015.
+ * Resolves with a THREE.Group whose meshes render after the occluder.
+ */
+export function loadGlasses(spec: FrameSpec, modelsBaseUrl: string, fade: TempleFade, reflect: LensReflect): Promise<THREE.Group> {
     const url = new URL(spec.file, modelsBaseUrl).href;
     return new Promise((resolve, reject) => {
         new GLTFLoader().load(url, (gltf) => {
@@ -86,10 +97,13 @@ export function loadGlasses(spec: FrameSpec, modelsBaseUrl: string, fade: Temple
             g.traverse((child) => {
                 const mesh = child as THREE.Mesh;
                 if (!mesh.isMesh) return;
-                mesh.renderOrder = 3;
                 const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-                const faded = materials.map((m) => withTempleFade(m, mesh.matrixWorld.clone(), fade));
-                mesh.material = Array.isArray(mesh.material) ? faded : faded[0];
+                const lens = isLens(materials[0], spec);
+                mesh.renderOrder = lens ? 4 : 3;   // glass after the opaque frame
+                const replaced = materials.map((m) => isLens(m, spec)
+                    ? createLensMaterial(m, spec.kind, reflect[spec.kind])
+                    : withTempleFade(m, mesh.matrixWorld.clone(), fade));
+                mesh.material = Array.isArray(mesh.material) ? replaced : replaced[0];
             });
 
             const size = new THREE.Box3().setFromObject(g).getSize(new THREE.Vector3());
@@ -124,4 +138,44 @@ function withTempleFade(source: THREE.Material, toFrame: THREE.Matrix4, fade: Te
         );
     };
     return material;
+}
+
+function isLens(material: THREE.Material, spec: FrameSpec): boolean {
+    return material.name === 'lens' || (spec.lensMaterials ?? []).includes(material.name);
+}
+
+/**
+ * Glass for the lenses (ADR-015: flat lens surfaces), with Fresnel reflections.
+ *
+ * three 0.113's MeshPhysicalMaterial already behaves like glass through its
+ * `transparency`: the body is see-through, but the alpha rises with the
+ * reflected light, and that reflection follows Schlick's Fresnel (about 4 %
+ * looking straight at it, close to 100 % at grazing angles and towards the
+ * edges as the head turns). On top of that, `strength` scales the reflection by
+ * frame kind: clear on sunglasses, subtle on reading glasses so the eyes show.
+ */
+function createLensMaterial(source: THREE.Material, kind: FrameSpec['kind'], strength: number): THREE.Material {
+    const tint = (source as THREE.MeshStandardMaterial).color?.clone() ?? new THREE.Color(1, 1, 1);
+    const glass = new THREE.MeshPhysicalMaterial({
+        name: 'lens',
+        color: tint,
+        metalness: 0,
+        roughness: 0.02,
+        transparent: true,
+        depthWrite: false,
+        side: THREE.DoubleSide
+    });
+    // How see-through the body is: clear reading lenses vs dark sun lenses
+    // (`transparency` exists in 0.113 but is missing from its type definitions)
+    (glass as THREE.MeshPhysicalMaterial & { transparency: number }).transparency = kind === 'sun' ? 0.15 : 0.94;
+    glass.onBeforeCompile = (shader) => {
+        shader.uniforms.uLensReflect = { value: strength };
+        shader.fragmentShader = 'uniform float uLensReflect;\n' + shader.fragmentShader.replace(
+            '#include <lights_fragment_end>',
+            `#include <lights_fragment_end>
+    reflectedLight.indirectSpecular *= uLensReflect;
+    reflectedLight.directSpecular *= uLensReflect;`
+        );
+    };
+    return glass;
 }

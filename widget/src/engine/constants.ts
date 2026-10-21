@@ -66,6 +66,9 @@ export const CFG = {
     // Temples fade out between these distances behind the bridge (mm), before the
     // ear and the hair, which tracking cannot see (override: ?fade=45,75)
     templeFade: { startMm: 45, endMm: 75 },
+    // Lens reflection strength by frame kind (override: ?reflect=<sun>,<reading>).
+    // Reading lenses must never hide the eyes, so theirs is subtle
+    lensReflect: { sun: 1.0, reading: 0.35 },
     // Brightness of the screen reflected on frames and lenses (override: ?light=).
     // 2.5 was barely visible, 6 turned the rose-gold metal almost white
     screenLight: 4,
