@@ -81,9 +81,21 @@ Sin orden ni duración; cada uno entra si un cliente lo pide.
 - Oclusor de orejas y pelo: las patillas quedan delante de la oreja y del pelo (prueba del 2026-10-18). El elipsoide de cabeza tapa la patilla de atrás pero no modela orejas ni volumen de pelo. Ajuste fino.
 
 - DP de cerca vs. lejos.
-- Foto para compartir.
 - Comparar dos marcos lado a lado.
-- Recomendación por forma de cara.
 - Servicio de ir a fotografiar el catálogo de la óptica, como extra pago.
 - Integración por producto con WooCommerce (vincular producto ↔ `frame`). Surge del análisis; `TBD` si va en la Fase 2 o 3.
-- "Frame removal" (probarse marcos sin sacarse los propios), como ofrece Fittingbox. Surge de la investigación de competencia; no está en el plan.
+
+Agregadas por la investigación de mercado del 2026-10-20 (Sesión 4). Dificultad estimada sobre el stack actual; nada de esto está decidido ni priorizado:
+
+| Idea | Qué es | Dificultad | Notas |
+|---|---|---|---|
+| Guía de talle | Ancho de cara (landmarks escalados por iris, ADR-025) contra ancho total del marco (2×calibre + puente + terminales, ~12 mm): "te queda chico / justo / grande". | Baja de programar; precisión sin validar | Reutiliza la escala por iris y las medidas de `frames`. Mejor relación valor/esfuerzo. **Depende de la alerta abierta sobre la regla del iris** (el anteojo se vio proporcionado en una cara adulta y en la de un adolescente; la DP varía entre dispositivos): validar antes de mostrarlo. Fittingbox lo vende como "Size Guarantee". Se presenta como orientación, igual que la DP (ADR-010). |
+| Tinte de lentes | Selector de color de lente o fotocromático. | Baja, si la lente es una pieza propia | Es cambiar el material de la lente (ADR-033). Hoy solo los marcos generados con IA tienen la lente como superficie de vidrio propia; en los de Sketchfab "Sol" y "Metal" viene fundida con el marco. En producción depende de que el script de Blender genere las lentes (ADR-015), que todavía no existe. Fittingbox lo vende como "Lens Try-On". |
+| Compartir la foto | Botón compartir (hoja nativa del celular) sobre la foto que hoy ya se descarga. | Baja | La foto ya existe (brief §3.6). La compartición la decide el usuario; nada pasa por nuestro servidor. |
+| Variantes de color del marco | Mismo modelo en varios colores. | Media | Cambia el esquema (variantes por `frame`) y el pipeline (texturas por variante). |
+| Botón "agregar al carrito" | Del espejo al carrito de WooCommerce. | Media | Depende de vincular producto ↔ `frame` (ítem de la lista de arriba). Refuerza el argumento local (P-09). |
+| Modo foto | Cargar una foto desde el dispositivo en vez de usar la cámara en vivo. | Media | Se procesa igual en el navegador y no se envía a ningún servidor (ADR-001). Útil en computadoras sin cámara. |
+| Recomendación por forma de cara | Clasificar el rostro (ovalado, redondo, cuadrado…) con proporciones de landmarks y sugerir estilos. | Media | La técnica es fácil; las reglas de estilo son convención, no ciencia, y la clasificación es ruidosa. Requiere etiquetar cada marco con su estilo (cambio de esquema). |
+| Modo local (kiosco) | El widget a pantalla completa en una tablet dentro del local, para probar todo el catálogo sin tenerlo en stock. | Baja–media | Mismo widget. Podría abrir venta a ópticas sin sitio web, pero el licenciamiento valida el dominio del sitio de la óptica (ADR-011): una óptica sin sitio necesita otra forma de validar la licencia (por ejemplo, una página que hospedemos nosotros por óptica). |
+| Eliminación de montura (frame removal) | Borrar en vivo los anteojos que el usuario tiene puestos. | Alta | Clave para miopes que no ven la pantalla sin anteojos. Exige reconstruir la cara en video en vivo dentro del navegador. Es la función estrella de Fittingbox, que la tiene patentada (según la investigación, 59 patentes; dato a verificar): revisar antes de encararla. |
+| Altura de segmento | Medición para lentes progresivos. | Alta | Depende del marco puesto y roza lo clínico; choca con ADR-010 si no se presenta como estimación. |

@@ -77,3 +77,11 @@ Cada una en **escritorio y celular**.
 4. **Si es posible, HTML y CSS** de las pantallas: se portan a mano al Shadow DOM del widget, así que conviene CSS simple con variables, sin frameworks.
 
 **Fuera de alcance:** el panel de administración de las ópticas (se diseña en la Fase 3).
+
+## 5. Crecimiento previsto (no se diseña ahora)
+
+El widget va a sumar funciones (ver el backlog de `docs/05-roadmap.md`). No se diseñan ahora: solo se pide que **el layout no se rompa cuando lleguen**.
+
+- **Barra de acciones de 2 a 6 botones.** Hoy son "Medir DP" y "Foto". A futuro: "Talle", "Tinte de lentes", "Compartir" y "Agregar al carrito", este último en el color de la óptica (ADR-031). Hace falta una solución para el celular cuando no entran todas, por ejemplo un menú "más".
+- **La tarjeta de resultado de la DP es un componente reutilizable** para otras mediciones (por ejemplo, "Talle: te queda justo"), siempre con el mismo aviso de estimación (ADR-010): "Es una estimación hecha con la cámara. No reemplaza la medición de tu óptico."
+- **Una segunda fila de opciones debajo del selector de marcos**, para colores del marco o tintes de lente. Hoy queda vacía, pero el espacio tiene que estar previsto, tanto en escritorio como en celular.

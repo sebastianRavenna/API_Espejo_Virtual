@@ -4,6 +4,23 @@ Registro cronológico por sesión. La entrada más nueva va arriba.
 
 ---
 
+## 2026-10-20 — Sesión 4: funciones para escalar (planificación, sin código)
+
+**Qué se hizo**
+- Sebastian preguntó qué otras funciones suelen tener estos espejos (medición de cabeza, eliminación de montura, vista 360, forma de cara).
+- Investigación de mercado (Fittingbox, GlamAR y otros). El backlog de `05-roadmap.md` suma 10 ideas, cada una con su dificultad sobre el stack actual.
+- Correcciones: el visor 360 ya es parte del producto base (RF-03, brief §3.4 "Ver en 3D"), no una función a futuro. La "medición de cabeza" que ofrece el mercado es en realidad una guía de talle (ancho de cara contra ancho del marco).
+
+- **Revisión en Claude Code (2026-10-21)** contra `07-decisiones.md` y el código, con seis correcciones aprobadas por Sebastian: (1) "Tinte de lentes" es baja solo si la lente es una pieza propia; hoy lo es en los marcos generados con IA, no en "Sol" ni "Metal" de Sketchfab, y en producción depende del script de Blender (ADR-015, ADR-033). (2) "Guía de talle": el ancho total del marco suma las terminales (~12 mm), y la precisión depende de la alerta abierta sobre la regla del iris. (3) "Modo kiosco": el licenciamiento valida el dominio (ADR-011), así que una óptica sin sitio necesita otra forma de validar. (4) Se quitaron los duplicados ("Foto para compartir" y "Recomendación por forma de cara"). (5) "Modo foto" dice "cargar desde el dispositivo, sin enviarla" (ADR-001). (6) El dato de las 59 patentes de Fittingbox quedó marcado como "a verificar".
+- **Brief del widget (`09-brief-widget.md`), sección 5 "Crecimiento previsto"**, el mismo criterio que Sebastian ya le pasó a Claude Design: barra de acciones de 2 a 6 botones (con solución para el celular, por ejemplo un menú "más"), la tarjeta de resultado de la DP como componente reutilizable para otras mediciones (siempre con el aviso de ADR-010) y espacio previsto para una segunda fila de opciones debajo del selector de marcos. No se diseñan ahora: solo se pide que el layout no se rompa. No lleva ADR: es un criterio de diseño que se apoya en ADR-010 y ADR-031.
+- **En paralelo, otra sesión de Claude Code** (commit `78211ba`) hizo de las lentes superficies de vidrio con Fresnel, con el reflejo graduado por tipo (sol 1,0, lectura 0,35, ajustable con `?reflect=`), registró **ADR-033** (amplía ADR-030) y dejó el panorama de entorno como **P-18**: propuesta "Lebombo" de Poly Haven (CC0, HDR 1k de 1,48 MB), esperando el OK de Sebastian. El prototipo de post-proceso ahora genera lentes planas (`--lens clear|tinted`). Falta la prueba con cámara.
+
+**Pendiente**
+- El backlog no se prioriza hasta el feedback del piloto (Fase 2).
+- Sebastian: OK al panorama (P-18) y prueba con cámara de las lentes nuevas.
+
+---
+
 ## 2026-10-19 — Sesión 3: empaquetado del widget (TypeScript + Vite, sin React)
 
 **Qué se hizo**
