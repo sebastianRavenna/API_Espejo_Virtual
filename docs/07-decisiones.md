@@ -253,6 +253,29 @@ Para revertir una decisión hay que hacerlo explícitamente: se agrega una entra
 - **Alternativas descartadas:** dejar la lente de la IA (facetada y fundida con el marco, deforma el reflejo); usar transparencia común (los reflejos se apagan junto con el vidrio).
 - **Consecuencias:** el script de Blender tiene que generar las lentes igual que el prototipo: superficie curva (curva base 6), material `lens`, tinte en espacio lineal (G-15 ≈ 0,03 / 0,04 / 0,02).
 
+### ADR-034 · Supabase de desarrollo en la organización gratuita; se transfiere a la paga antes del piloto (enmienda ADR-005)
+- **Fecha:** 2026-10-21 (decidida por Sebastian)
+- **Decisión:** el proyecto Supabase del Espejo se crea en la organización gratuita "Produccion de Apps" para desarrollar y probar la Fase 1. Cuando haya algo operativo, antes de mostrárselo a una óptica, pasa a la organización paga (Raven-Net). ADR-005 sigue valiendo para producción.
+- **Configuración al crearlo:** región São Paulo (`sa-east-1`, la misma de los otros proyectos); Data API activada (el Worker llama funciones por PostgREST); **"Automatically expose new tables" desactivado** (los permisos se dan a mano en las migraciones, así `anon` no ve ninguna tabla); **"Enable automatic RLS" activado** como red de seguridad (las migraciones igual lo activan explícitamente); Postgres común, no OrioleDB.
+- **Contexto:** no pagar USD 10/mes mientras no haya nada que mostrar.
+- **Objeciones de Claude (anotadas, no bloquean):** (1) los proyectos gratuitos se pausan tras una semana sin actividad; si se pausa, el widget se queda sin catálogo, así que no sirve para mostrárselo a una óptica; (2) el plan gratuito no tiene backups (P-12); (3) el plan gratuito permite pocos proyectos activos por cuenta (verificar el cupo actual).
+- **Cómo se migra:** Supabase permite transferir un proyecto entre organizaciones (Project Settings → General → Transfer project), y conserva la URL y las claves, así que el Worker no cambia. Verificar el procedimiento cuando llegue el momento. Si no se pudiera, el plan B es rehacer el proyecto corriendo las migraciones de `supabase/migrations/`, que es la fuente de verdad del esquema.
+- **Consecuencias:** el costo fijo es USD 0 hasta el piloto. La transferencia entra como tarea de la Fase 2.
+
+### ADR-035 · El operador se identifica con `app_metadata.role = 'operator'` (resuelve P-08)
+- **Fecha:** 2026-10-21 (decidida por Sebastian, recomendación de Claude)
+- **Decisión:** el usuario de Sebastian en Supabase Auth lleva `app_metadata.role = 'operator'`. La función `is_operator()` lee ese claim del JWT. `app_metadata` solo se edita con la clave de servicio o desde el dashboard; el usuario no lo puede cambiar.
+- **Alternativas descartadas:** UID fijo dentro de una función (hay que migrar para sumar a otra persona); tabla de roles (agrega una tabla, contra ADR-012).
+- **Consecuencias:** después de cambiar el claim hay que cerrar sesión y volver a entrar para que el JWT lo traiga.
+
+### ADR-036 · El Worker usa la clave `anon` (publishable) y solo puede ejecutar funciones (resuelve P-04)
+- **Fecha:** 2026-10-21 (decidida por Sebastian)
+- **Decisión:** el Worker habla con Supabase con la clave pública (`anon`, que en los proyectos nuevos se llama "publishable key", `sb_publishable_…`). El rol `anon` no tiene permisos sobre ninguna tabla: solo `execute` sobre funciones `security definer` que validan clave, dominio y estado antes de devolver o guardar algo. Lectura: `get_catalog`. Eventos (Fase 2): `log_events`, que recibe un lote (los eventos se agrupan en el cliente para cuidar el cupo de 100.000 pedidos por día del Worker).
+- **Contexto:** es la opción (b) de P-04. La clave de servicio saltea RLS y, si se filtrara desde el Worker, expondría toda la base; con `anon`, lo peor que puede pasar es que alguien llame a las mismas funciones públicas.
+- **Diferencia con un frontend que usa `anon` directo (como suele hacerse, por ejemplo, en Buzzer Live):** acá la clave no está en el navegador sino como secreto del Worker (ADR-007), y aunque se filtrara no da acceso a ninguna tabla.
+- **Alternativas descartadas:** clave de servicio como secreto del Worker (opción a).
+- **Consecuencias:** toda la lógica de validación vive en SQL (`get_catalog`, `log_events`) y se prueba en la base; el Worker queda como pasamanos con caché y CORS.
+
 ---
 
 ## Pendientes de decisión
@@ -261,12 +284,12 @@ Para revertir una decisión hay que hacerlo explícitamente: se agrega una entra
 |---|---|---|---|---|
 | ~~P-01~~ | ~~Hosting de estáticos~~ | **Resuelto → ADR-021 (Cloudflare Pages)** | | |
 | P-02 | Generación 3D | Hunyuan3D en Colab/Kaggle / Tripo o Hunyuan por API | **Prueba del 2026-10-18:** Hunyuan3D-2mv en Colab gratuito sirve para acetato (forma muy buena) y es aceptable para metal fino (más grueso que el real, con artefactos; requiere revisión y quizá plantilla). Recomendación: seguir con Hunyuan3D-2mv en Colab para el piloto (costo cero, ~minutos por marco más la sesión), con fotos ortogonales (P-15) y el post-proceso de lentes. Probado en el espejo el 2026-10-19: el de sol, excelente; el de acetato, bien tras limpiar las lentes; el metálico fino, flojo. Falta evaluar textura (Paint). Confirmar la licencia (P-16 y la inconsistencia de `setup.py`). | Fase 2 |
-| P-03 | Dominio del producto | — (el plan usa `cdn.tuproducto.com`) | Elegir nombre comercial y dominio antes de la Fase 1. Tiene costo anual de registro: es un costo fijo que el plan no menciona. | Fase 1 (dominio de R2 y CDN) |
-| P-04 | Escritura de `try_on_events` y credencial del Worker | (a) `POST /v1/events` en el mismo Worker con service role como secreto; (b) función `security definer` llamada con `anon` | (a), agrupando eventos en el cliente (batch) para no gastar el cupo de 100k req/día. | Fase 1–2 (métricas del piloto) |
+| P-03 | Dominio del producto | — (el plan usa `cdn.tuproducto.com`) / **subdominio de `raven-net.com.ar`** (propuesta de Sebastian, 2026-10-21) | **El subdominio sirve y no cuesta nada** (por ejemplo `espejo.raven-net.com.ar` para el Worker y `cdn.espejo.raven-net.com.ar` para R2 y `widget.js`). Condición: los dominios propios de R2 y de Workers exigen que el DNS de `raven-net.com.ar` esté en la misma cuenta de Cloudflare (mudar los nameservers es gratis; el modo "solo CNAME" es del plan Business). Contra: el producto queda con la marca Raven-Net en el snippet; si después se elige un nombre comercial, hay que cambiar el snippet en cada óptica. Hasta resolverlo se trabaja con `*.workers.dev` y la URL de desarrollo de R2; por eso la base guarda rutas de R2 y no URLs completas. | Fase 2 (antes de embeber en el sitio de la óptica) |
+| ~~P-04~~ | ~~Escritura de `try_on_events` y credencial del Worker~~ | **Resuelto → ADR-036 (`anon` + funciones `security definer`)** | | |
 | ~~P-05~~ | ~~Valores de `frames.kind`~~ | **Resuelto → ADR-022 (`sun / reading`)** | | |
 | ~~P-06~~ | ~~Dónde vive el código del spike~~ | **Resuelto → ADR-020 (`widget/` en este repo)** | | |
 | P-07 | Compresión de GLB y texturas | Draco / meshopt · KTX2 / WebP | Decidir en el spike midiendo peso y tiempo de carga en el celular. | Fase 0 |
-| P-08 | Cómo identifica RLS al operador | claim `app_metadata.role` / UID fijo en una función / tabla de roles | Claim en `app_metadata`: no agrega tablas (respeta ADR-012). | Fase 1 |
+| ~~P-08~~ | ~~Cómo identifica RLS al operador~~ | **Resuelto → ADR-035 (claim `app_metadata.role`)** | | |
 | P-09 | Argumento comercial frente a la competencia | Ver `01-analisis.md` → Competencia | Apoyarse en pesos, MercadoPago, digitalización local y DP incluida; dejar de vender "español + WooCommerce" como diferencial. | Fase 2 (antes de ofrecer el piloto) |
 | P-10 | Cómo sube el formulario las fotos a R2 | URL prefirmada emitida por el Worker / subida a través del Worker | URL prefirmada: el archivo no pasa por el Worker. Definir también si el formulario requiere login. | Fase 2 |
 | P-11 | Dónde corre Blender headless en la Fase 4 | Máquina de Sebastian procesando una cola / servicio de cómputo pago | Sin decidir hasta la Fase 4. Un Cloudflare Worker no puede correr Blender. | Fase 4 |

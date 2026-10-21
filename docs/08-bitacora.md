@@ -4,6 +4,23 @@ Registro cronológico por sesión. La entrada más nueva va arriba.
 
 ---
 
+## 2026-10-21 — Sesión 6: arranque del backend (modelo de datos, sin código)
+
+**Qué se hizo**
+- Sebastian: el reflejo de las lentes con cámara real "no se ve para nada bien"; se sigue con la API y se revisa después (tarea en `05-roadmap.md`).
+- Sebastian: la DP da resultados distintos en cada medición, con hasta 4 mm de diferencia; primero tiene que ser repetible. Queda como tarea de la Fase 0, con una primera sospecha: la corrección de cerca a lejos.
+- Plan de la Fase 1 (esquema → Worker → conectar el widget → R2). Se revisaron los proyectos Supabase de la cuenta: no había uno para el Espejo.
+- Decisiones: Supabase de desarrollo en la organización gratuita "Produccion de Apps" y transferencia a la paga antes del piloto (**ADR-034**, enmienda ADR-005, con objeciones anotadas: pausa por inactividad, sin backups). Operador por `app_metadata.role` (**ADR-035**, cierra P-08). Worker con la clave `anon` que solo ejecuta funciones `security definer` (**ADR-036**, cierra P-04).
+- Revisión de la pantalla de creación del proyecto: desactivar "Automatically expose new tables", activar "Enable automatic RLS" y elegir São Paulo.
+- **Modelo de datos v2** propuesto en `02-arquitectura.md`: rutas de R2 en vez de URLs, `check` en los estados, motivo de rechazo, registro de la revisión, marca de IA (P-16), visibilidad y orden, `render_params` para los marcos de prueba, sesión anónima y tipo de dispositivo en los eventos, y las funciones `get_catalog` y `log_events`. La Fase 3 (miembros, cobros, variantes) queda esbozada sin migrar (ADR-012).
+- P-03: Sebastian propone un subdominio de `raven-net.com.ar`. Sirve y no cuesta nada si el DNS está en Cloudflare; queda abierto.
+
+**Pendiente**
+- OK de Sebastian al modelo v2 y creación del proyecto Supabase.
+- Confirmar dónde está el DNS de `raven-net.com.ar`.
+
+---
+
 ## 2026-10-21 — Reflejos de entorno en las lentes (sesión paralela a la 5)
 
 **Qué se hizo**

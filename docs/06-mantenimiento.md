@@ -9,7 +9,7 @@ El plan pide **verificar los límites de cada plan al momento de arrancar, porqu
 | Cloudflare Workers (endpoint público) | 100.000 req/día (plan) · CPU limitada por request (verificar) | En el plan gratuito, los pedidos por encima del límite diario fallan hasta el reset; no se cobra (verificar). | Si cada `try` y cada `open` es un `POST /v1/events`, los eventos consumen el cupo mucho más rápido que el catálogo (que va cacheado). Ver P-04. |
 | Cloudflare R2 (assets) | 10 GB de almacenamiento, egreso sin cargo (plan) · cupo mensual de operaciones de lectura y escritura (verificar) | Se cobra por GB y por millón de operaciones adicionales (verificar). | Bajo: un GLB comprimido pesa poco, pero hay que medirlo en el spike. Las fotos fuente también ocupan espacio. |
 | Cloudflare Pages (estáticos, ADR-021) | Pedidos a estáticos gratis e ilimitados; 500 builds/mes; 25 MiB por archivo; 20.000 archivos por sitio (verificado 2026-10-18) | Los builds de más esperan al mes siguiente (verificar). | Bajo. |
-| Supabase (proyecto dentro de la organización paga) | USD 10/mes por el proyecto (plan); los cupos de base, auth y backups dependen del plan de la organización (verificar) | Excedentes cobrados por uso (verificar). | Bajo para el piloto. `try_on_events` es la tabla que más crece. |
+| Supabase (en desarrollo, organización gratuita; desde el piloto, la paga: ADR-034) | Gratuito: el proyecto se pausa tras una semana sin actividad y no tiene backups (verificar cupos). Pago: USD 10/mes por el proyecto (plan); los cupos de base, auth y backups dependen del plan de la organización (verificar) | Excedentes cobrados por uso (verificar). | Bajo para el piloto. `try_on_events` es la tabla que más crece. |
 | Generación 3D (Colab/Kaggle) | Cuotas de GPU gratuitas variables (verificar) | Hay que esperar o pasar a la API paga (P-02). | El costo se traslada a la óptica. |
 | MercadoPago | Sin costo fijo; comisión por transacción | — | — |
 
@@ -17,9 +17,9 @@ El plan pide **verificar los límites de cada plan al momento de arrancar, porqu
 
 | Concepto | Costo mensual |
 |---|---|
-| Proyecto Supabase | USD 10 |
+| Proyecto Supabase | 0 en desarrollo (ADR-034); USD 10 desde el piloto |
 | Todo lo demás | 0 (dentro de las capas gratuitas) |
-| **Total fijo** | **USD 10/mes** |
+| **Total fijo** | **USD 0 hoy; USD 10/mes desde el piloto** |
 
 Costos variables: generación 3D por marco (trasladada a la óptica) y comisiones de cobro. Al 2026-10-18 no hay nada contratado todavía.
 

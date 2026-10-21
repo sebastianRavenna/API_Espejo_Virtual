@@ -11,6 +11,8 @@ Orden de trabajo fijo: spike técnico → flujos y esquema mínimo → piloto co
 - [x] Hacerlo correr localmente por HTTPS (ADR-024). Verificado en la PC y en el celular (Sebastian, 2026-10-18).
 - [x] Reemplazar el modelo procedural por 3 GLB genéricos (Sketchfab CC o CGTrader): uno de acetato grueso, uno metálico fino y uno de sol. Los tres probados con cámara en PC y celular, elegibles con botones (2026-10-18).
 - [ ] Agregar la estimación de DP con landmarks de iris. **Implementada y probada con cámara (ADR-027): estable, coincide con una tarjeta en ~2 % y se muestra como DP de lejos. Falta compararla con una DP medida por un óptico (Auglio da 3 mm más).**
+- [ ] **Repetibilidad de la DP (pedido de Sebastian, 2026-10-21):** medir varias veces seguidas da resultados distintos, con hasta 4 mm de diferencia. Antes que la exactitud, tiene que dar siempre lo mismo. Hay que revisar cómo se mide: cada medición es estable por dentro (dispersión ≤ 2 mm), pero varía de una a otra. Primera sospecha: la corrección de cerca a lejos, que depende de la distancia estimada (iris en píxeles + campo de visión supuesto de la cámara), más que la DP de cerca. Para separarlas, comparar la DP de cerca y la distancia de 5 a 10 mediciones con `?debug=1`.
+- [ ] **El reflejo de las lentes no convence (Sebastian, 2026-10-21):** "no se ve para nada bien" con cámara real. Se sigue con la API; mientras tanto, bajarlo o apagarlo por defecto (`?reflect=`) y revisarlo después (ADR-033).
 - [x] Probar Hunyuan3D multi-vista con fotos de 3 marcos y evaluar el resultado (2026-10-18, fotos de producto de Edel-Optics). Acetato: muy bien. Metálico fino: reconocible, pero más grueso que el real y con artefactos. Probados en el espejo con cámara el 2026-10-19: el de sol, excelente (ver `08-bitacora.md`).
 - [ ] Empaquetar como un solo `widget.js` con Vite y probarlo embebido en una página WordPress y en una HTML pelada. **Hecho el empaquetado (TypeScript + Vite, botón + modal en Shadow DOM, ADR-028/029) y probado en la HTML pelada (2026-10-19). Probado con cámara en PC y celular: funciona igual que antes. Falta WordPress.**
 
@@ -24,9 +26,10 @@ Orden de trabajo fijo: spike técnico → flujos y esquema mínimo → piloto co
 
 **Tareas:**
 - [ ] Escribir en texto plano qué hace cada persona. El borrador ya está en `01-analisis.md`; se revisa con lo aprendido en el spike.
-- [ ] Crear el proyecto Supabase y las tablas mínimas (`tenants`, `frames`, `try_on_events`) con RLS desde el principio.
-- [ ] Resolver P-04 (escritura de eventos y credencial del Worker), P-05 (valores de `kind`) y P-08 (identificar al operador).
-- [ ] Crear el bucket de R2 con dominio propio (requiere P-03).
+- [ ] Cerrar el modelo de datos v2 con Sebastian (`02-arquitectura.md`), antes de escribir SQL.
+- [ ] Crear el proyecto Supabase en la organización gratuita (ADR-034) y migrar las tablas de la Fase 1 (`tenants`, `frames`, `try_on_events`) con RLS desde el principio, en `supabase/migrations/`.
+- [x] Resolver P-04 (ADR-036), P-05 (ADR-022) y P-08 (ADR-035).
+- [ ] Crear el bucket de R2. Mientras no esté el dominio (P-03), con la URL de desarrollo de R2.
 - [ ] Worker con `GET /v1/catalog`.
 - [ ] Conectar el widget del spike al endpoint de catálogo.
 
@@ -38,6 +41,7 @@ Orden de trabajo fijo: spike técnico → flujos y esquema mínimo → piloto co
 
 **Tareas:**
 - [ ] Revisar el argumento comercial (P-09) antes de salir a buscar la óptica.
+- [ ] Transferir el proyecto Supabase a la organización paga (ADR-034) y resolver el dominio (P-03).
 - [ ] Elegir una óptica. `TBD`: cuál.
 - [ ] Digitalizar 10 a 20 marcos suyos (servicio manual; ellos entregan fotos y medidas).
 - [ ] Formulario mínimo de entrega (nombre, tipo, tres medidas, cuatro fotos) que guarde en R2 (P-10).

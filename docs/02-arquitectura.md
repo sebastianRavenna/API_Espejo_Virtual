@@ -34,7 +34,7 @@ Todo el procesamiento de video (cámara, tracking, oclusor, render 3D y estimaci
 | Render 3D | Three.js (espejo) y `<model-viewer>` (visor 360). El widget usa three 0.113 (2020), la del repo original; actualizarlo es P-17 | 0 |
 | Widget y panel (estáticos) | Cloudflare Pages (ADR-021) | 0 (estáticos ilimitados, 500 builds/mes) |
 | Endpoint público del widget | Cloudflare Workers | 0 (100k req/día) |
-| Base de datos y auth | Supabase, proyecto nuevo en la organización paga | USD 10/mes |
+| Base de datos y auth | Supabase: en desarrollo, organización gratuita; en producción, la paga (ADR-034) | 0 en desarrollo; USD 10/mes desde el piloto |
 | Assets 3D (GLB y texturas) | Cloudflare R2 con dominio propio | 0 (10 GB, egreso sin cargo) |
 | Generación 3D | Hunyuan3D (open source) en Colab/Kaggle, o Tripo/Hunyuan por API (`TBD`, P-02) | 0 al inicio; centavos por marco después, trasladados al cliente |
 | Post-proceso 3D | Blender headless (script Python), local | 0 |
@@ -130,14 +130,14 @@ Reglas del plan:
 - Al inicio, **solo el operador escribe** en `frames`. En la Fase 4 se habilita la escritura a la óptica con un cambio de política, no de esquema.
 - El endpoint público no lee las tablas directamente: usa la `api_key` y una vista o función que solo expone marcos `ready` de tenants en `trial` o `active`.
 
-Borrador en SQL. **Cómo se identifica al operador está `TBD` (P-08).** Hasta resolverlo, el borrador usa un claim `app_metadata.role = 'operator'` en el JWT de Supabase Auth.
+Borrador en SQL. El operador se identifica con el claim `app_metadata.role = 'operator'` en el JWT de Supabase Auth (ADR-035).
 
 ```sql
 alter table tenants enable row level security;
 alter table frames enable row level security;
 alter table try_on_events enable row level security;
 
--- helper: ¿el usuario actual es el operador?  (P-08)
+-- helper: ¿el usuario actual es el operador?  (ADR-035)
 create or replace function is_operator() returns boolean
 language sql stable as $$
   select coalesce((auth.jwt() -> 'app_metadata' ->> 'role') = 'operator', false)
@@ -155,7 +155,7 @@ create policy frames_owner_select on frames for select
 create policy frames_operator_write on frames for all
   using (is_operator()) with check (is_operator());
 
--- try_on_events: la óptica lee los suyos; la escritura la hace el Worker (P-04)
+-- try_on_events: la óptica lee los suyos; la escritura la hace log_events() (ADR-036)
 create policy events_owner_select on try_on_events for select
   using (is_operator() or tenant_id in (select id from tenants where owner_user_id = auth.uid()));
 ```
@@ -164,21 +164,124 @@ create policy events_owner_select on try_on_events for select
 
 ### Lectura pública del catálogo
 
-Una función `security definer` (propuesta), sin acceso directo de `anon` a las tablas:
+Una función `security definer`, sin acceso directo de `anon` a las tablas (ADR-036). El detalle está en "Modelo de datos v2" más abajo.
+
+## Modelo de datos v2 (propuesta del 2026-10-21, para revisar con Sebastian)
+
+**Estado:** borrador; no hay nada migrado. Reemplaza al esquema del plan de arriba cuando Sebastian lo apruebe.
+
+**Criterio:** se piensa en papel la base de todas las fases, para no encerrarse, pero la primera migración crea solo lo que necesita el piloto (ADR-012). Lo de la Fase 3 queda esbozado y se migra cuando haga falta.
+
+### Cambios respecto del esquema del plan, y por qué
+
+| Cambio | Por qué |
+|---|---|
+| `glb_url` y `thumbnail_url` pasan a ser `glb_path` y `thumbnail_path` (ruta dentro de R2, por ejemplo `t/<tenant_id>/f/<frame_id>/v1/model.glb`) | El dominio todavía no está (P-03): hoy es la URL de desarrollo de R2 y mañana un subdominio. Con rutas, el Worker arma la URL con `ASSETS_BASE_URL` y cambiar de dominio no toca la base. La versión en la ruta permite que el navegador guarde el GLB en caché para siempre: un modelo corregido es una ruta nueva. |
+| `source_photos` guarda rutas, no URLs | Mismo motivo. |
+| `check` en `status`, `kind`, `model_status` y `event`, y rangos para las medidas | Ya estaba propuesto. Un valor mal escrito rompe el catálogo sin avisar. |
+| `frames.rejection_reason` | `03-diseno-visual.md` preguntaba si la óptica ve por qué se rechazó un marco; sin esto no hay dónde guardarlo. |
+| `frames.reviewed_at` y `reviewed_by` | Deja registro de la revisión humana (ADR-009). Un marco no puede quedar `ready` sin GLB ni sin revisión (`check`). |
+| `frames.ai_generated` | Para la leyenda "modelo 3D generado con IA" que pide la licencia de Hunyuan3D (P-16). |
+| `frames.is_visible` y `sort_order` | La óptica (o el operador) oculta un marco sin stock sin borrarlo, y ordena el selector. |
+| `frames.render_params jsonb` | Correcciones de los modelos que no vienen normalizados (unidad, puente, rotación, materiales de lente: hoy son `unitToMm`, `bridge`, `rotationY` y `lensMaterials` en `widget/src/engine/frames.ts`). Los que pasan por Blender vienen normalizados (ADR-015) y lo dejan vacío. Sirve para cargar en la base los seis marcos de prueba sin rehacerlos. |
+| `tenants.trial_ends_at` | ADR-018 deja abierto cuánto dura el trial; con la fecha en la base, vencerlo deja de depender de la memoria del operador (igual se cambia a mano, ADR-013). |
+| `tenants.website_url` | El operador sabe dónde está embebido el widget; ayuda en el diagnóstico (`06-mantenimiento.md`). |
+| `tenants.api_key` con valor por defecto generado en la base (`ev_` + 32 caracteres hex) | Nadie inventa claves a mano; rotar es un `update`. |
+| `allowed_domains` guarda nombres de host en minúscula, sin esquema ni puerto; `*.ejemplo.com` cubre subdominios | Regla clara para comparar contra `Origin`. `www.` no se agrega solo: se carga explícito o con comodín. |
+| `try_on_events.session_id` (uuid al azar por apertura del modal) y `device` (`mobile` / `desktop`) | Permite contar sesiones únicas, que es como cobran los competidores (usuarios únicos por mes), sin guardar datos personales: el uuid no se guarda en el dispositivo y no hay IP ni user agent. |
+| `try_on_events.event` suma `view_3d` | El visor 360 ("Ver en 3D", brief §3.4) también es uso medible. |
+| `created_at` / `updated_at` con trigger | Para el panel y el diagnóstico. |
+
+### Fase 1 (primera migración)
 
 ```sql
--- propuesta: el Worker llama get_catalog(api_key) y valida el Origin contra allowed_domains
--- devuelve: allowed_domains + marcos ready de un tenant trial/active; vacío si no aplica
+create table tenants (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  api_key text unique not null default ('ev_' || encode(gen_random_bytes(16), 'hex')),
+  allowed_domains text[] not null default '{}',   -- hosts: 'optica.com.ar', '*.optica.com.ar'
+  status text not null default 'trial' check (status in ('trial','active','suspended')),
+  trial_ends_at timestamptz,
+  brand_color text check (brand_color ~* '^#[0-9a-f]{6}$'),   -- ADR-031
+  website_url text,
+  owner_user_id uuid references auth.users(id),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table frames (
+  id uuid primary key default gen_random_uuid(),
+  tenant_id uuid not null references tenants(id) on delete cascade,
+  name text not null,
+  kind text not null check (kind in ('sun','reading')),       -- ADR-022
+  eye_size_mm int check (eye_size_mm between 30 and 75),
+  bridge_mm int check (bridge_mm between 10 and 30),
+  temple_mm int check (temple_mm between 100 and 160),
+  model_status text not null default 'pending'
+    check (model_status in ('pending','ready','rejected')),
+  rejection_reason text,
+  glb_path text,
+  thumbnail_path text,
+  source_photos jsonb not null default '{}',   -- {"front": "t/…/src/front.jpg", …}
+  render_params jsonb not null default '{}',   -- fix-ups de modelos no normalizados
+  ai_generated boolean not null default false, -- P-16
+  is_visible boolean not null default true,
+  sort_order int not null default 0,
+  reviewed_at timestamptz,
+  reviewed_by uuid references auth.users(id),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  check (model_status <> 'ready' or (glb_path is not null and reviewed_at is not null))  -- ADR-009
+);
+create index frames_tenant_idx on frames (tenant_id);
+
+create table try_on_events (
+  id bigint generated always as identity primary key,
+  tenant_id uuid not null references tenants(id) on delete cascade,
+  frame_id uuid references frames(id) on delete set null,
+  event text not null check (event in ('open','view_3d','try','snapshot','pd')),
+  session_id uuid not null,
+  device text check (device in ('mobile','desktop')),
+  created_at timestamptz not null default now()
+);
+create index try_on_events_tenant_time_idx on try_on_events (tenant_id, created_at);
 ```
 
-`TBD` (P-04): con qué credencial llama el Worker a Supabase (service role guardada como secreto del Worker, o rol `anon` que solo puede ejecutar la función).
+**Permisos** (con "Automatically expose new tables" desactivado, ADR-034):
+
+- `anon`: nada sobre las tablas; solo `execute` sobre `get_catalog` y `log_events`. Se revoca `execute` a `public` en todas las funciones.
+- `authenticated`: `select` sobre las tres tablas, filtrado por RLS (las políticas de arriba), e `insert/update/delete` sobre `tenants` y `frames`, que RLS solo deja pasar al operador (ADR-035).
+- RLS activado en las tres tablas desde la primera migración (ADR-008).
+
+**Funciones:**
+
+| Función | Quién la llama | Qué hace |
+|---|---|---|
+| `is_operator()` | RLS | `app_metadata.role = 'operator'` (ADR-035). |
+| `get_catalog(p_key text, p_origin_host text) returns jsonb` | Worker, con `anon` | Si la clave existe, el host está en `allowed_domains` (exacto o comodín) y el estado es `trial` o `active`: `{ brand_color, frames: [...] }` con los marcos `ready` y visibles, ordenados por `sort_order`. Si no: `{ frames: [] }`. **No devuelve la lista de dominios**: la comparación se hace adentro. |
+| `log_events(p_key text, p_origin_host text, p_events jsonb)` | Worker, con `anon` (Fase 2) | Mismas validaciones; inserta el lote (tope de 50 eventos por llamada) y descarta los `frame_id` que no sean del tenant. |
+| `set_updated_at()` | Trigger | Actualiza `updated_at`. |
+
+Cada marco de `get_catalog` trae `id, name, kind, eye_size_mm, bridge_mm, temple_mm, glb_path, thumbnail_path, render_params, ai_generated`. El Worker convierte las rutas en URLs.
+
+### Fase 2 (piloto)
+
+Sin tablas nuevas. Se activa `log_events`; el formulario de entrega crea el `frame` en `pending` con sus `source_photos` (la subida a R2 es P-10).
+
+### Fase 3 (esbozo, no se migra ahora)
+
+- `tenant_members (tenant_id, user_id, role)`: más de un usuario por óptica. Reemplaza a `owner_user_id`; las políticas pasan a mirar esta tabla.
+- `charges (tenant_id, concept: subscription | digitization, frame_id, amount_ars, period, paid_at, method: transfer | mercadopago)`: el abono y los cargos por marco (ADR-002, ADR-013). Precios y escalones por cantidad de marcos siguen `TBD`.
+- `frame_variants`: variantes de color (backlog).
+- `frames.product_url` o vínculo con WooCommerce (backlog).
+- Agregados de métricas (vista o tabla diaria) si `try_on_events` crece demasiado.
 
 ## Endpoints del Worker público
 
 | Método y ruta | Estado | Qué hace |
 |---|---|---|
-| `GET /v1/catalog?key=<api_key>` | Definido en el plan | Valida que la clave exista, que `Origin` esté en `allowed_domains` y que `status` sea `trial` o `active`. Devuelve `{ frames: [{ id, name, kind, eye_size_mm, bridge_mm, temple_mm, glb_url, thumbnail_url }] }`. Con clave inválida, dominio no permitido o tenant suspendido devuelve `{ frames: [] }`. Respuesta cacheada; el TTL es `TBD`. |
-| `POST /v1/events` | **Pendiente (P-04)** | Recibe `{ key, frame_id, event }` y lo inserta en `try_on_events`. El plan prevé la tabla, pero no dice cómo escribe en ella un widget anónimo. |
+| `GET /v1/catalog?key=<api_key>` | Definido en el plan | Valida que la clave exista, que `Origin` esté en `allowed_domains` y que `status` sea `trial` o `active`. Devuelve `{ brand_color, frames: [{ id, name, kind, eye_size_mm, bridge_mm, temple_mm, glb_url, thumbnail_url, render_params, ai_generated }] }` (las URLs las arma el Worker desde las rutas de R2). Con clave inválida, dominio no permitido o tenant suspendido devuelve `{ frames: [] }`. Respuesta cacheada; el TTL es `TBD`. |
+| `POST /v1/events` | Definido (ADR-036), se hace en la Fase 2 | Recibe `{ key, session_id, device, events: [{ frame_id, event }] }` (lote) y llama a `log_events`. |
 | Subida de fotos del formulario a R2 | **Pendiente (P-10)** | El plan dice que el formulario "guarda en R2", pero no dice por dónde pasa la subida. |
 
 CORS: el Worker responde `Access-Control-Allow-Origin` con el origen validado, no con `*`. Si el catálogo vuelve vacío, ¿se devuelve `200` con lista vacía o un código distinto que permita al widget mostrar un mensaje claro? `TBD` (ver estados en `03-diseno-visual.md`).

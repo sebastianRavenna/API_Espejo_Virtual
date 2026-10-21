@@ -22,21 +22,23 @@ Lo opera Sebastian (Raven-Net); al inicio la digitalización es un servicio manu
 | `docs/source/` | Plan, prompt inicial e instrucciones originales (congelados) | Solo como referencia histórica; manda `docs/` |
 
 ## 3. Estado actual (2026-10-21)
-- **Fase:** 0 — Spike técnico, en curso.
+- **Fase:** 0 — Spike técnico, en curso (faltan WordPress y la DP). En paralelo arranca la Fase 1 (backend): primero se cierra el modelo de datos.
 - **Repo:** https://github.com/sebastianRavenna/API_Espejo_Virtual (rama `main`).
 - **Hecho:** `widget/` es TypeScript + Vite, sin React (ADR-028). Genera un solo `widget.js` que inserta un botón "Probátelos" y abre el probador en un modal con Shadow DOM (ADR-029). Probado en la página de desarrollo y en una HTML pelada, y con cámara en PC y celular: funciona igual que antes (quedan ajustes finos). El motor conserva todo lo validado con cámara: escala por iris (ADR-025), DP de lejos (ADR-027), oclusores, patillas con 7° de inclinación, seis marcos (tres de Sketchfab y tres generados con Hunyuan3D-2mv).
 - **Hunyuan3D (P-02):** en Colab dio formas muy buenas en acetato (el de sol, excelente en cámara) y aceptables en metal fino. Prototipo de post-proceso en `blender/prototype_postprocess.py`.
 - **DP:** estable y coincide con una tarjeta en ~2 %; ~60,5 mm de lejos para Sebastian contra 63–64 de Auglio. No mostrarla a una óptica sin validarla con un óptico.
 - **Ajustes finos:** las patillas se desvanecen hacia atrás (para no pasar sobre oreja y pelo) y hay un reflejo del entorno en marcos y lentes; confirmados con cámara. Ajustables con `?fade=` y `?light=`.
-- **Lentes de vidrio (ADR-033):** en los marcos generados con IA y en el "Acetato" de Sketchfab, la lente es una superficie propia con Fresnel; el reflejo es marcado en sol y sutil en lectura (`?reflect=`). Reflejan el panorama "Lebombo" (CC0, P-18 cerrado) y las de IA son curvas (curva base 6), así el reflejo muestra el ventanal y se desplaza al girar. Verificado con cámara simulada; falta la prueba con cámara real.
+- **Lentes de vidrio (ADR-033):** en los marcos generados con IA y en el "Acetato" de Sketchfab, la lente es una superficie propia con Fresnel; el reflejo es marcado en sol y sutil en lectura (`?reflect=`). Reflejan el panorama "Lebombo" (CC0, P-18 cerrado) y las de IA son curvas (curva base 6), así el reflejo muestra el ventanal y se desplaza al girar. Con cámara real, a Sebastian **no le convence para nada** (2026-10-21): se sigue con la API y se revisa después; mientras tanto, bajarlo o apagarlo por defecto.
+- **DP poco repetible:** medir varias veces da hasta 4 mm de diferencia. Antes que la exactitud, tiene que dar siempre lo mismo (tarea en `05-roadmap.md`, Fase 0).
+- **Backend (Fase 1):** Supabase de desarrollo en la organización gratuita "Produccion de Apps", con transferencia a la paga antes del piloto (ADR-034). El operador se identifica con `app_metadata.role` (ADR-035). El Worker usa la clave `anon` y solo ejecuta funciones `security definer` (ADR-036). Modelo de datos v2 propuesto en `02-arquitectura.md`, esperando el OK de Sebastian; todavía no hay SQL. Dominio: Sebastian propone un subdominio de `raven-net.com.ar` (P-03, sin cerrar).
 - **Límites conocidos:** de perfil completo el anteojo desaparece (MediaPipe); la DP varía entre dispositivos (62 en celular, 58–59 en PC); `widget.js` pesa 664 KB (three 0.113 + `RGBELoader`, P-17).
 - **Backlog:** 10 funciones a futuro con dificultad estimada (guía de talle, tinte, frame removal…) en `05-roadmap.md` (Sesión 4, revisado el 2026-10-21). No se prioriza hasta el piloto. El brief del widget prevé el crecimiento (sección 5) sin diseñarlo ahora.
-- **Esperando a Sebastian:** prueba con cámara real de las lentes curvas con el panorama; diseño en Claude Design; DP medida por un óptico; números de `?debug=1` en el celular para la DP; abrir el issue de `LICENSE` en el repo original. Pendientes abiertos: 12 (P-18 cerrado).
+- **Esperando a Sebastian:** prueba con cámara real de las lentes curvas con el panorama; diseño en Claude Design; DP medida por un óptico; números de `?debug=1` en el celular para la DP; abrir el issue de `LICENSE` en el repo original; OK al modelo de datos v2; crear el proyecto Supabase con la configuración de ADR-034. Pendientes abiertos: 10 (P-04 y P-08 cerrados).
 
 ## 4. Próximos tres pasos
-1. Ajustes finos del widget y prueba embebido en un WordPress de prueba (cierra el empaquetado de la Fase 0).
-2. Diseño visual del widget: Sebastian lleva `docs/09-brief-widget.md` a Claude Design (ADR-030, colores por óptica ADR-031, marca discreta ADR-032); después se implementa en `widget/src/ui/`.
-3. Validar la DP contra un óptico y cerrar P-02/P-07 (generación 3D y peso de los GLB).
+1. Cerrar el modelo de datos v2 con Sebastian y escribir la primera migración (`supabase/migrations/`) con RLS, permisos y `get_catalog`; después, el Worker `GET /v1/catalog` y conectar el widget.
+2. DP: que sea repetible (revisar la corrección de cerca a lejos con `?debug=1`) y después validarla con un óptico.
+3. Widget: bajar o apagar el reflejo de las lentes, prueba en WordPress y diseño en Claude Design (`docs/09-brief-widget.md`).
 
 ## 5. Protocolo de trabajo
 **Al recibir un prompt:**
