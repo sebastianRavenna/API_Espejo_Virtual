@@ -79,7 +79,14 @@ export interface LensReflect {
  * Load a GLB and wrap it so the returned group follows ADR-015.
  * Resolves with a THREE.Group whose meshes render after the occluder.
  */
-export function loadGlasses(spec: FrameSpec, modelsBaseUrl: string, fade: TempleFade, reflect: LensReflect): Promise<THREE.Group> {
+/** How the frame is drawn: temple fade, lens reflection and surroundings on the frame. */
+export interface FrameLook {
+    fade: TempleFade;
+    reflect: LensReflect;
+    envIntensity: number;
+}
+
+export function loadGlasses(spec: FrameSpec, modelsBaseUrl: string, look: FrameLook): Promise<THREE.Group> {
     const url = new URL(spec.file, modelsBaseUrl).href;
     return new Promise((resolve, reject) => {
         new GLTFLoader().load(url, (gltf) => {
@@ -101,8 +108,8 @@ export function loadGlasses(spec: FrameSpec, modelsBaseUrl: string, fade: Temple
                 const lens = isLens(materials[0], spec);
                 mesh.renderOrder = lens ? 4 : 3;   // glass after the opaque frame
                 const replaced = materials.map((m) => isLens(m, spec)
-                    ? createLensMaterial(m, spec.kind, reflect[spec.kind])
-                    : withTempleFade(m, mesh.matrixWorld.clone(), fade));
+                    ? createLensMaterial(m, spec.kind, look.reflect[spec.kind])
+                    : withTempleFade(m, mesh.matrixWorld.clone(), look.fade, look.envIntensity));
                 mesh.material = Array.isArray(mesh.material) ? replaced : replaced[0];
             });
 
@@ -120,8 +127,11 @@ export function loadGlasses(spec: FrameSpec, modelsBaseUrl: string, fade: Temple
  * of transparent, so it needs no depth sorting against the lenses.
  * toFrame maps the mesh's own coordinates to the ADR-015 frame (mm, Z forward).
  */
-function withTempleFade(source: THREE.Material, toFrame: THREE.Matrix4, fade: TempleFade): THREE.Material {
+function withTempleFade(source: THREE.Material, toFrame: THREE.Matrix4, fade: TempleFade, envIntensity: number): THREE.Material {
     const material = source.clone();
+    if ('envMapIntensity' in material) {
+        (material as THREE.MeshStandardMaterial).envMapIntensity = envIntensity;
+    }
     material.onBeforeCompile = (shader) => {
         shader.uniforms.uToFrame = { value: toFrame };
         shader.uniforms.uFadeStart = { value: -fade.startMm };

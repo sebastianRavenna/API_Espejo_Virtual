@@ -69,8 +69,13 @@ export const CFG = {
     // Lens reflection strength by frame kind (override: ?reflect=<sun>,<reading>).
     // Reading lenses must never hide the eyes, so theirs is subtle
     lensReflect: { sun: 1.0, reading: 0.35 },
-    // Brightness of the screen reflected on frames and lenses (override: ?light=).
-    // 2.5 was barely visible, 6 turned the rose-gold metal almost white
+    // Reflected surroundings: a CC0 360° panorama (ADR-033, P-18), turned so its
+    // window faces the person. Path relative to the models base URL
+    environment: { file: 'env/lebombo_1k.hdr', yawTurns: 0.5 },
+    // How much the surroundings reflect on the frames (override: ?light=)
+    envIntensity: 1,
+    // Fallback while the panorama loads or if it fails: synthetic room with the
+    // screen in front. 2.5 was barely visible, 6 turned the rose-gold metal white
     screenLight: 4,
     // PD estimate (ADR-027): median of valid frames, looking at the camera, close enough
     pd: {

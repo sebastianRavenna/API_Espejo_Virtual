@@ -92,7 +92,7 @@ Argumento comercial principal según el plan: las métricas ("el modelo X lo pro
 - **Seguridad:** HTTPS obligatorio, porque sin HTTPS no hay acceso a la cámara. Aislamiento multi-tenant con RLS.
 - **Aislamiento visual:** Shadow DOM, para que los estilos del sitio no rompan el widget ni el widget rompa el sitio.
 - **Costo:** capas gratuitas en todo salvo Supabase (USD 10/mes). Ver `06-mantenimiento.md`.
-- **Realismo:** escala en mm reales, origen en el puente, oclusor facial, lentes como superficies planas.
+- **Realismo:** escala en mm reales, origen en el puente, oclusor facial, lentes como superficies de vidrio propias, curvas como una lente real.
 - **Rendimiento:** `TBD`. Preguntas: ¿peso máximo de `widget.js` y de cada GLB? ¿Tiempo máximo hasta ver el primer marco en un celular de gama media?
 - **Compatibilidad:** `TBD`. Pregunta: ¿qué navegadores y dispositivos se soportan (Safari iOS, Chrome Android, desktop)?
 - **Idioma:** español. `TBD`: si hace falta más de un idioma.

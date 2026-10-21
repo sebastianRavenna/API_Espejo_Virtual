@@ -27,7 +27,7 @@ export interface WidgetOptions {
     debug: boolean;
     pitchDeg?: number;
     templeFade?: TempleFade;
-    screenLight?: number;
+    envIntensity?: number;
     lensReflect?: LensReflect;
 }
 
@@ -49,7 +49,7 @@ export class EspejoWidget {
 
     constructor(host: HTMLElement, opts: WidgetOptions) {
         this.opts = opts;
-        this.engine = new TryOnEngine({ modelsBaseUrl: opts.modelsBaseUrl, pitchDeg: opts.pitchDeg, templeFade: opts.templeFade, screenLight: opts.screenLight, lensReflect: opts.lensReflect });
+        this.engine = new TryOnEngine({ modelsBaseUrl: opts.modelsBaseUrl, pitchDeg: opts.pitchDeg, templeFade: opts.templeFade, envIntensity: opts.envIntensity, lensReflect: opts.lensReflect });
         // Diagnostics: reach the engine from the browser console
         if (opts.debug) (window as unknown as { __espejoEngine: TryOnEngine }).__espejoEngine = this.engine;
         this.root = host.attachShadow({ mode: 'open' });

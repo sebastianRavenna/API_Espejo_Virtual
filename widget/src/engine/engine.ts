@@ -11,6 +11,7 @@ import * as THREE from 'three';
 import { CFG, LM, IRIS, FACE_OVAL } from './constants';
 import { clamp, toV, eyeMid, qDelta, toPixels, median, quantile, type Points } from './helpers';
 import { FRAMES, loadGlasses, type TempleFade, type LensReflect } from './frames';
+import { loadPanorama, panoramaEnvironment } from './env';
 import { createDynamicFaceMesh, createHeadOccluder } from './occluder';
 import { createCamera, createVideoBackground, createLights, createRenderer, createScreenEnvironment } from './scene';
 import { getFaceLandmarker, type FaceLandmarker } from './mediapipe';
@@ -64,7 +65,7 @@ export class TryOnEngine {
     private readonly modelsBaseUrl: string;
     private readonly pitchCorrection: THREE.Quaternion;
     private readonly templeFade: TempleFade;
-    private readonly screenLight: number;
+    private readonly envIntensity: number;
     private readonly lensReflect: LensReflect;
     private readonly frameCache = new Map<string, Promise<THREE.Group>>();
     private selectedFrameId = FRAMES[0].id;
@@ -87,9 +88,9 @@ export class TryOnEngine {
         prev: new THREE.Vector3()
     };
 
-    constructor(opts: { modelsBaseUrl: string; pitchDeg?: number; templeFade?: TempleFade; screenLight?: number; lensReflect?: LensReflect }) {
+    constructor(opts: { modelsBaseUrl: string; pitchDeg?: number; templeFade?: TempleFade; envIntensity?: number; lensReflect?: LensReflect }) {
         this.modelsBaseUrl = opts.modelsBaseUrl;
-        this.screenLight = opts.screenLight ?? CFG.screenLight;
+        this.envIntensity = opts.envIntensity ?? CFG.envIntensity;
         this.lensReflect = opts.lensReflect ?? CFG.lensReflect;
         this.templeFade = opts.templeFade ?? CFG.templeFade;
         // Pitch correction: the forehead–chin line leans back compared with the head's
@@ -120,7 +121,7 @@ export class TryOnEngine {
         scene.add(sprite);
 
         // Reflections: a dim room with the screen's light in front of the face
-        scene.environment = createScreenEnvironment(renderer, this.screenLight);
+        scene.environment = createScreenEnvironment(renderer, CFG.screenLight);
 
         createLights().forEach((light) => scene.add(light));
 
@@ -138,6 +139,15 @@ export class TryOnEngine {
             scene.add(this.glassesObj);
         }
         void this.selectFrame(this.selectedFrameId);
+
+        // Swap the synthetic room for the panorama as soon as it is available
+        const envUrl = new URL(CFG.environment.file, this.modelsBaseUrl).href;
+        loadPanorama(envUrl, CFG.environment.yawTurns).then((texture) => {
+            if (!session.running) return;
+            const previous = scene.environment;
+            scene.environment = panoramaEnvironment(renderer, texture);
+            previous?.dispose();
+        }).catch((err) => console.warn('[espejo] reflection panorama not loaded; using the synthetic room', err));
 
         // Until tracking is ready this loop shows the camera
         const animate = () => {
@@ -182,7 +192,7 @@ export class TryOnEngine {
         if (!pending) {
             const spec = FRAMES.find((f) => f.id === id);
             if (!spec) return Promise.reject(new Error(`unknown frame ${id}`));
-            pending = loadGlasses(spec, this.modelsBaseUrl, this.templeFade, this.lensReflect).then((g) => {
+            pending = loadGlasses(spec, this.modelsBaseUrl, { fade: this.templeFade, reflect: this.lensReflect, envIntensity: this.envIntensity }).then((g) => {
                 g.add(createHeadOccluder(CFG.headOccluder));  // follows the glasses' pose and mm scale
                 return g;
             });

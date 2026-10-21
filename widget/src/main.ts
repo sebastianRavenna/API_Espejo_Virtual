@@ -37,7 +37,7 @@ function mount(script: HTMLScriptElement | null): void {
     else if (script?.parentNode) script.parentNode.insertBefore(host, script.nextSibling);
     else document.body.appendChild(host);
 
-    // Live tuning from the page URL: ?pitch=<degrees>, ?fade=<start>,<end> (mm), ?light=<n>,
+    // Live tuning from the page URL: ?pitch=<degrees>, ?fade=<start>,<end> (mm), ?light=<n> (surroundings on the frame),
     // ?reflect=<sun>,<reading> (lens reflection by frame kind), ?debug=1
     const params = new URLSearchParams(location.search);
     const pitch = parseFloat(params.get('pitch') ?? '');
@@ -50,7 +50,7 @@ function mount(script: HTMLScriptElement | null): void {
         debug: params.has('debug'),
         pitchDeg: Number.isFinite(pitch) ? pitch : undefined,
         templeFade: Number.isFinite(fadeStart) && Number.isFinite(fadeEnd) ? { startMm: fadeStart, endMm: fadeEnd } : undefined,
-        screenLight: Number.isFinite(light) ? light : undefined,
+        envIntensity: Number.isFinite(light) ? light : undefined,
         lensReflect: Number.isFinite(reflectSun) && Number.isFinite(reflectReading) ? { sun: reflectSun, reading: reflectReading } : undefined
     });
 }

@@ -4,6 +4,21 @@ Registro cronológico por sesión. La entrada más nueva va arriba.
 
 ---
 
+## 2026-10-21 — Reflejos de entorno en las lentes (sesión paralela a la 5)
+
+**Qué se hizo**
+- **Panorama "Lebombo" (P-18 → ADR-033):** con el OK de Sebastian se bajó el HDR 1k (1,48 MB, CC0) a `widget/public/models-dev/env/lebombo_1k.hdr` y se carga como entorno de reflejos (`widget/src/engine/env.ts`, `RGBELoader` + `PMREMGenerator` de three 0.113). Se gira media vuelta para que el ventanal quede en el reflejo de frente. El entorno sintético queda mientras carga o si falla.
+- **Lentes curvas (curva base 6):** con lentes planas el reflejo se veía como un tinte beige parejo, porque una superficie plana refleja apenas unos grados del panorama. Sebastian aprobó curvarlas como una lente real (enmienda ADR-015): `blender/prototype_postprocess.py` arma cada lente con anillos concéntricos y la curva con radio 530 / curva (`--base-curve`, por defecto 6). Se regeneraron `hy-acetate`, `hy-metal` y `hy-sun`.
+- **Tinte G-15 corregido:** el verde (0,16 / 0,19 / 0,13) se veía lechoso porque glTF guarda el color en espacio lineal; ahora es 0,03 / 0,038 / 0,024.
+- `?light=` ahora regula la intensidad del entorno sobre el marco (por defecto 1).
+- Verificado en el navegador con cámara simulada: en "IA · Sol" se ven formas del entorno (ventanal, reflejo del sol) que cambian de lugar al girar el anteojo; en "IA · Acetato" (lectura) el vidrio queda claro con brillos leves.
+
+**Pendiente**
+- Prueba con cámara real de Sebastian (sol y lectura, girando la cabeza).
+- Pasar la curva de las lentes al script de Blender definitivo.
+
+---
+
 ## 2026-10-20 — Sesión 4: funciones para escalar (planificación, sin código)
 
 **Qué se hizo**

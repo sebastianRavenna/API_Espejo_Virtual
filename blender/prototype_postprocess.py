@@ -6,7 +6,8 @@ Takes a Hunyuan3D-2mv mesh and writes a GLB in the ADR-015 convention:
      (transparent holes for clear lenses, the lens tint for sunglasses), and the
      front geometry the photo shows as background (shapes the AI invented).
   2. Replaces each lens with a clean glass surface following the lens outline
-     (ADR-015), as a separate primitive with a material named "lens".
+     (ADR-015), curved like a real lens (base curve, ADR-033), as a separate
+     primitive with a material named "lens".
   3. Scales to real millimetres from the frame measurements (eye, bridge).
   4. Puts the origin at the bridge (lateral centre, back face). Hunyuan already
      outputs X across, Y up, Z forward, so no rotation is needed.
@@ -17,7 +18,7 @@ will port these steps to the headless Blender script (see docs/04-desarrollo.md)
 
 Usage:
   python blender/prototype_postprocess.py <mesh.glb> <front_photo> <out.glb>
-      --eye 53 --bridge 17 --material acetate_black --lens clear|tinted
+      --eye 53 --bridge 17 --material acetate_black --lens clear|tinted [--base-curve 6]
 """
 import argparse, json, struct
 from collections import deque
@@ -172,13 +173,19 @@ def clean_front(V, F, photo_path, tinted, margin_px=4, background_margin_px=12):
     return F[~drop], holes, align
 
 
-def build_lenses(V, F, holes, align):
-    """One flat glass surface per lens, following the lens outline of the photo.
+LENS_RINGS = 8              # concentric rings per lens, so the curvature is smooth
 
-    The plane is fitted to the depths of the frame vertices next to the outline,
-    so each lens follows the frame's wrap, and the outline grows LENS_TUCK_PX so
-    the glass edge hides under the rim. Triangulated as a fan from the centre
-    (lens openings are convex).
+
+def build_lenses(V, F, holes, align):
+    """One glass surface per lens, following the lens outline of the photo.
+
+    The outline sits on a plane fitted to the depths of the frame vertices next
+    to it (the AI's rim is bumpy), so each lens follows the frame's wrap; the
+    outline grows LENS_TUCK_PX so the glass edge hides under the rim. The surface
+    is built as concentric rings (lens openings are convex) and comes out flat:
+    curve_lenses() bends it once the scale in mm is known.
+    Returns vertices, faces, and per vertex the plane normal and r²·(1 − t²), the
+    term the sagitta needs (r: outline radius in that direction, t: ring fraction).
     """
     import cv2
     grown = cv2.dilate(holes.astype(np.uint8), np.ones((2 * LENS_TUCK_PX + 1,) * 2, np.uint8))
@@ -186,7 +193,7 @@ def build_lenses(V, F, holes, align):
     front = V[np.unique(F)]
     front = front[front[:, 2] > V[:, 2].max() - 0.15]
     s, ty, cx_m, cx_p = align['s'], align['ty'], align['cx_m'], align['cx_p']
-    LV, LF = [], []
+    LV, LF, LN, LS = [], [], [], []
     for i in range(1, n):
         contours, _ = cv2.findContours((labels == i).astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
         outline = cv2.approxPolyDP(max(contours, key=cv2.contourArea), 2.0, True)[:, 0, :].astype(float)
@@ -195,16 +202,46 @@ def build_lenses(V, F, holes, align):
         d = (front[None, :, 0] - x[:, None]) ** 2 + (front[None, :, 1] - y[:, None]) ** 2
         z = front[d.argmin(axis=1), 2] - 0.005                     # just behind the rim's front face
         # The AI's rim is bumpy, so its depths would facet the glass and warp reflections:
-        # fit one plane per lens (ADR-015: flat lenses) and put the outline on it
+        # fit one plane per lens and put the outline on it
         A = np.stack([x, y, np.ones_like(x)], axis=1)
-        z = A @ np.linalg.lstsq(A, z, rcond=None)[0]
-        ring = np.stack([x, y, z], axis=1)
+        coef = np.linalg.lstsq(A, z, rcond=None)[0]
+        outline3 = np.stack([x, y, A @ coef], axis=1)
+        normal = np.array([-coef[0], -coef[1], 1.0])
+        normal /= np.linalg.norm(normal)                           # points forward (+Z)
+        centre = outline3.mean(axis=0)
+        r2 = ((outline3 - centre) ** 2).sum(axis=1)                # squared outline radius per direction
+        k = len(outline3)
         base = sum(len(v) for v in LV)
-        LV.append(np.vstack([ring.mean(axis=0), ring]))
-        k = len(ring)
-        LF.append(np.array([[base, base + 1 + j, base + 1 + (j + 1) % k] for j in range(k)]))
-    print(f'  built {len(LV)} lens surfaces')
-    return np.vstack(LV), np.vstack(LF)
+        verts, sag = [centre], [r2.mean()]
+        for ring in range(1, LENS_RINGS + 1):
+            t = ring / LENS_RINGS
+            verts.extend(centre + t * (outline3 - centre))
+            sag.extend(r2 * (1 - t * t))
+        faces = [[base, base + 1 + j, base + 1 + (j + 1) % k] for j in range(k)]
+        for ring in range(1, LENS_RINGS):
+            a0, b0 = base + 1 + (ring - 1) * k, base + 1 + ring * k
+            for j in range(k):
+                j2 = (j + 1) % k
+                faces += [[a0 + j, b0 + j, b0 + j2], [a0 + j, b0 + j2, a0 + j2]]
+        LV.append(np.array(verts)); LF.append(np.array(faces))
+        LS.append(np.array(sag)); LN.append(np.tile(normal, (len(verts), 1)))
+    print(f'  built {len(LV)} lens surfaces ({LENS_RINGS} rings)')
+    return np.vstack(LV), np.vstack(LF), np.vstack(LN), np.concatenate(LS)
+
+
+def curve_lenses(LV_mm, LN, LS, scale, base_curve):
+    """Bend the flat lenses into spherical caps, like real lenses (ADR-033).
+
+    A flat lens mirrors only a few degrees of the surroundings, which reads as a
+    plain tint; a real front surface (base curve ~4–6 D) mirrors a wide angle, so
+    the reflection shows recognisable shapes. Radius = 530 / base curve mm (glass
+    index ~1.53). The outline stays on the rim and the centre comes forward by the
+    sagitta (r² − (t·r)²) / 2R.
+    """
+    if base_curve <= 0:
+        return LV_mm
+    radius_mm = 530.0 / base_curve
+    return LV_mm + LN * (LS * scale * scale / (2 * radius_mm))[:, None]
 
 
 def remove_small_pieces(F, n_vertices, min_frac=0.02):
@@ -283,13 +320,14 @@ def main():
     ap.add_argument('--eye', type=float, required=True); ap.add_argument('--bridge', type=float, required=True)
     ap.add_argument('--material', choices=MATERIALS, required=True)
     ap.add_argument('--lens', choices=LENS_MATERIALS, required=True, help='clear (reading) or tinted (sun) lenses')
+    ap.add_argument('--base-curve', type=float, default=6.0, help='lens front curve in dioptres (0 = flat)')
     a = ap.parse_args()
 
     V, F = read_glb(a.mesh)
     print(a.mesh)
     F, holes, align = clean_front(V, F, a.photo, a.lens == 'tinted')
     F = remove_small_pieces(F, len(V))
-    LV, LF = build_lenses(V, F, holes, align)
+    LV, LF, LN, LS = build_lenses(V, F, holes, align)
     V, F = compact(V, F)
 
     # Scale: front width (front band only) maps to the frame's total width in mm
@@ -300,7 +338,7 @@ def main():
     br = front[np.abs(front[:, 0]) < 0.03]
     origin = np.array([0.0, (br[:, 1].min() + br[:, 1].max()) / 2, br[:, 2].min()])
     V = (V - origin) * s
-    LV = (LV - origin) * s
+    LV = curve_lenses((LV - origin) * s, LN, LS, s, a.base_curve)
     size = V.max(0) - V.min(0)
     print(f'  {width_mm:.0f} mm wide -> scale {s:.2f} mm/unit; size {size.round(1)} mm; {len(F)} faces')
     color, metallic, rough = MATERIALS[a.material]

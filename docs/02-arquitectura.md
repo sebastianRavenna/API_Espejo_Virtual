@@ -48,11 +48,11 @@ Costo fijo de arranque: **USD 10/mes**. Los límites de cada plan cambian; hay q
 - **Oclusor:** una malla invisible de la cara que solo escribe profundidad. Así las patillas se esconden detrás de la cabeza cuando la persona gira. El óvalo de la cara solo no alcanza: al mirar abajo y a un costado, la patilla de atrás asoma por encima de la frente. Por eso se suma un elipsoide con forma de cabeza, pegado al anteojo y en mm, más angosto que las patillas para no tapar la patilla del lado de la cámara (visto en el spike, 2026-10-18).
 - **Escala en milímetros reales:** se usan las medidas grabadas en la patilla, calibre-puente-patilla (por ejemplo, 52-18-140).
 - **Origen en el puente**, con los ejes alineados: X hacia la sien, Y hacia arriba, Z hacia adelante.
-- **Lentes como dos superficies planas** con material vidrio (transparente para lectura, tintado para sol). No se usa la geometría de lentes que genera la IA.
+- **Lentes como dos superficies propias** con material vidrio (transparente para lectura, tintado para sol), curvas como una lente real (curva base 6, ADR-033). No se usa la geometría de lentes que genera la IA.
 - **HTTPS obligatorio:** sin HTTPS el navegador no da acceso a la cámara.
 - **El video de la cámara no pasa por el tone mapping:** el tone mapping (ACES) es para el modelo 3D. Aplicado al video, la cara sale lavada y el anteojo parece pegado encima (visto en el spike, 2026-10-18). Además, la textura del video se declara sRGB: si no, la salida sRGB del renderer la aclara dos veces y queda pálida.
 - **Patillas que se desvanecen hacia atrás:** el seguimiento no ve orejas ni pelo, así que la patilla se difumina entre 45 y 75 mm detrás del puente para no dibujarse encima de ellos.
-- **Lentes de vidrio con Fresnel (ADR-033):** casi sin reflejo de frente y más fuerte en los bordes y ángulos rasantes, así se mueve al girar la cabeza; marcado en sol y sutil en lectura para no tapar los ojos. El entorno reflejado pasará a ser un panorama 360° CC0 (P-18).
+- **Lentes de vidrio con Fresnel (ADR-033):** casi sin reflejo de frente y más fuerte en los bordes y ángulos rasantes, así se mueve al girar la cabeza; marcado en sol y sutil en lectura para no tapar los ojos. El entorno reflejado es el panorama 360° "Lebombo" (CC0, 1,48 MB), servido desde R2 en producción.
 - **Reflejo de la pantalla:** el entorno de reflejos simula la pantalla delante de la cara, como hacen otros probadores; sin él, metales y lentes se ven apagados.
 - **El video y el anteojo se dibujan juntos:** cada cuadro se dibuja recién cuando MediaPipe terminó de procesarlo, con el anteojo ya ubicado. Si el video se dibuja apenas llega y el anteojo después, el anteojo va a destiempo al girar (visto en el spike).
 - **La regla de escala es el iris:** el mismo diámetro de 11,7 mm que usa la DP convierte milímetros del modelo a píxeles de pantalla (ADR-025).
@@ -198,7 +198,7 @@ CORS: el Worker responde `Access-Control-Allow-Origin` con el origen validado, n
 2. Generación 3D: Hunyuan3D multi-vista en Colab o Kaggle, a mano (o Tripo/Hunyuan por API, P-02).
 3. Post-proceso con un script de Blender headless, local:
    1. Importar la geometría generada por la IA.
-   2. Eliminar lo que la IA haya generado en la zona de lentes y reemplazarlo por dos superficies planas con material vidrio según el tipo (lectura o sol).
+   2. Eliminar lo que la IA haya generado en la zona de lentes y reemplazarlo por dos superficies curvas (curva base 6, ADR-033) con material vidrio según el tipo (lectura o sol).
    3. Escalar a milímetros reales con calibre, puente y largo de patilla.
    4. Centrar el origen en el puente y alinear ejes (X sien, Y arriba, Z adelante).
    5. Exportar GLB comprimido (Draco o meshopt) con texturas KTX2 o WebP. Cuál de cada uno es `TBD` (P-07).
