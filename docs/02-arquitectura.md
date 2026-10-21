@@ -88,6 +88,7 @@ create table tenants (
   api_key text unique not null,
   allowed_domains text[] not null default '{}',
   status text not null default 'trial', -- trial | active | suspended
+  brand_color text,                     -- hex del color de marca para el widget (ADR-031)
   owner_user_id uuid references auth.users(id),
   created_at timestamptz default now()
 );

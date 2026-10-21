@@ -18,6 +18,7 @@ Lo opera Sebastian (Raven-Net); al inicio la digitalización es un servicio manu
 | `docs/06-mantenimiento.md` | Límites gratuitos, costos, alta/baja de ópticas, rotar clave, diagnóstico, respaldos | Operación y soporte a clientes |
 | `docs/07-decisiones.md` | ADR + pendientes de decisión | **Siempre** que un pedido pueda contradecir algo ya decidido |
 | `docs/08-bitacora.md` | Registro por sesión | Para retomar contexto de sesiones anteriores |
+| `docs/09-brief-widget.md` | Brief de diseño del widget para Claude Design | Se diseña o se implementa la UI del widget |
 | `docs/source/` | Plan, prompt inicial e instrucciones originales (congelados) | Solo como referencia histórica; manda `docs/` |
 
 ## 3. Estado actual (2026-10-19)
@@ -28,11 +29,11 @@ Lo opera Sebastian (Raven-Net); al inicio la digitalización es un servicio manu
 - **DP:** estable y coincide con una tarjeta en ~2 %; ~60,5 mm de lejos para Sebastian contra 63–64 de Auglio. No mostrarla a una óptica sin validarla con un óptico.
 - **Ajustes finos:** las patillas se desvanecen hacia atrás (para no pasar sobre oreja y pelo) y hay un reflejo de pantalla en marcos y lentes; confirmados con cámara. Ajustables con `?fade=` y `?light=`.
 - **Límites conocidos:** de perfil completo el anteojo desaparece (MediaPipe); la DP varía entre dispositivos (62 en celular, 58–59 en PC); `widget.js` pesa 656 KB (three 0.113, P-17).
-- **Esperando a Sebastian:** detallar los ajustes finos del widget; DP medida por un óptico; números de `?debug=1` en el celular para la DP; abrir el issue de `LICENSE` en el repo original. Pendientes abiertos: 12 (P-13 resuelto; nuevo P-17).
+- **Esperando a Sebastian:** detallar los ajustes finos del widget; DP medida por un óptico; números de `?debug=1` en el celular para la DP; abrir el issue de `LICENSE` en el repo original. Pendientes abiertos: 12.
 
 ## 4. Próximos tres pasos
 1. Ajustes finos del widget y prueba embebido en un WordPress de prueba (cierra el empaquetado de la Fase 0).
-2. Diseño visual del widget en Claude Design (ADR-030) para el video de 30 segundos de la Fase 0.
+2. Diseño visual del widget: Sebastian lleva `docs/09-brief-widget.md` a Claude Design (ADR-030, colores por óptica ADR-031, marca discreta ADR-032); después se implementa en `widget/src/ui/`.
 3. Validar la DP contra un óptico y cerrar P-02/P-07 (generación 3D y peso de los GLB).
 
 ## 5. Protocolo de trabajo

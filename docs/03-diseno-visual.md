@@ -45,7 +45,7 @@ Este documento lista qué pantallas existen y qué datos muestra cada una. Lo vi
 | Resultado de DP | "DP estimada: XX mm", siempre con el aviso "Es una estimación; no reemplaza la medición de tu óptico" | Sí (texto final `TBD`) |
 | Cerrar / volver | Apaga la cámara y vuelve al visor | Sí |
 
-Durante el spike la UI es mínima pero prolija: termina en un video para mostrar a ópticas, así que no puede verse como un experimento. No se hacen mockups.
+Durante el spike la UI es mínima pero prolija: termina en un video para mostrar a ópticas, así que no puede verse como un experimento. El diseño se hace en Claude Design a partir del brief de `09-brief-widget.md` (ADR-030).
 
 **Decidido (ADR-029):** botón "Probátelos" que abre un modal; en celular, pantalla completa. La cámara se pide al abrir y se apaga al cerrar. Todo en Shadow DOM. La versión actual es funcional y mínima; el diseño visual se trabaja antes del video de la Fase 0.
 
@@ -68,6 +68,6 @@ Durante el spike la UI es mínima pero prolija: termina en un video para mostrar
 - **Idioma:** español, voseo rioplatense en los textos del widget. `TBD`: ¿voseo o neutro? Las ópticas fuera de Argentina podrían preferir neutro.
 - **Tono:** corto y directo; nunca promete precisión clínica.
 - **Aislamiento:** todo dentro del Shadow DOM, sin depender de fuentes ni estilos del sitio anfitrión.
-- **Colores y tipografía del widget:** `TBD`. Pregunta: ¿el widget toma el color de marca de cada óptica (configurable por tenant, lo que cambia el esquema) o usa una paleta neutra común?
-- **Marca "powered by":** `TBD`. Pregunta: ¿se muestra la marca del producto en el widget? Jeeliz vende como ventaja no mostrarla.
+- **Colores del widget (ADR-031):** el botón y los acentos usan el color de marca de cada óptica; el resto del modal es neutro y oscuro. El color del texto sobre el acento se elige por contraste. Tipografía: la del sistema (`system-ui`), sin fuentes externas.
+- **Marca "powered by" (ADR-032):** una línea chica y discreta dentro del modal, nunca en el botón. Texto final según el nombre comercial (P-03).
 - **Panel:** se define con Claude Design en la Fase 3.

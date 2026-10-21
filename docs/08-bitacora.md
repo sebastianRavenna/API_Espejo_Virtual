@@ -29,6 +29,11 @@ Registro cronológico por sesión. La entrada más nueva va arriba.
 **Pendiente**
 - Probar en WordPress. Diseño visual del widget antes del video de 30 segundos.
 
+**Arranque del diseño (2026-10-20)**
+- Desvanecido de patillas y reflejo confirmados con cámara y commiteados (`05c615e`).
+- Sebastian decidió: **color de marca de cada óptica** en el botón y los acentos (ADR-031; Claude recomendaba paleta neutra, objeción anotada) y **marca del producto discreta dentro del modal** (ADR-032). El esquema suma `tenants.brand_color`.
+- Se escribió `docs/09-brief-widget.md`, el brief para Claude Design: qué es, restricciones (Shadow DOM, color de acento variable, cara despejada, privacidad, aviso de DP), pantallas y estados en escritorio y celular, incluido "Ver en 3D", y qué entregar (tokens, componentes, pantallas y HTML/CSS).
+
 **Ajustes finos (pedidos de Sebastian tras la prueba con cámara)**
 - **ADR-030:** el diseño visual del widget pasa a Claude Design (reemplaza en parte a ADR-017).
 - **Patillas sobre el pelo o la oreja:** el seguimiento solo ve la cara, no orejas ni pelo, así que los oclusores invisibles no alcanzan. Técnica habitual en probadores: **desvanecer las patillas hacia atrás**. Se hace en el shader de cada material: entre 45 y 75 mm detrás del puente, la patilla desaparece con un difuminado (fragmentos descartados con un umbral por píxel, sin transparencia, así no hay problemas de orden con las lentes). Valores en `CFG.templeFade`, ajustables con `?fade=45,75`.

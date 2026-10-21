@@ -228,6 +228,21 @@ Para revertir una decisión hay que hacerlo explícitamente: se agrega una entra
 - **Alternativas descartadas:** seguir diseñando el widget directo en código.
 - **Consecuencias:** antes del video de la Fase 0 hay un paso de diseño en Claude Design. Los estilos están en un solo archivo (`widget/src/ui/styles.css`, en Shadow DOM), así que el rediseño no toca el motor. El diseño del panel sigue esperando a que las tablas estén cerradas (Fase 3), como dice ADR-017.
 
+### ADR-031 · El widget toma el color de marca de cada óptica
+- **Fecha:** 2026-10-20 (decidida por Sebastian)
+- **Decisión:** el botón "Probátelos" y los acentos del modal (marco elegido, botones principales, progreso) usan el color de marca de la óptica. El resto del modal es neutro (fondo oscuro, texto claro) para que la cámara y el anteojo se lean bien con cualquier color.
+- **Objeción de Claude (anotada):** recomendaba una paleta neutra común para el piloto, porque el color por óptica agrega una columna al esquema mínimo (ADR-012) y obliga a cuidar el contraste: un color claro (amarillo, celeste) sobre fondo claro o con texto blanco puede quedar ilegible.
+- **Contexto:** `03-diseno-visual.md` lo dejaba en `TBD`. La óptica siente el widget como propio si lleva su color.
+- **Alternativas descartadas:** paleta neutra igual para todas.
+- **Consecuencias:** el esquema suma `tenants.brand_color text` (hex, por ejemplo `#1a5fb4`), que se carga desde el panel y viaja en la respuesta de `/v1/catalog`. Mientras no haya backend, el `<script>` acepta `data-color`. El widget calcula el color del texto sobre el acento (blanco o negro) según el contraste, y si el color no es válido o tiene poco contraste usa uno por defecto.
+
+### ADR-032 · Marca del producto discreta dentro del modal
+- **Fecha:** 2026-10-20 (decidida por Sebastian)
+- **Decisión:** el modal muestra una línea chica con la marca del producto ("Probador por …"), abajo, con poco contraste. El botón que ve la página de la óptica no lleva nuestra marca.
+- **Contexto:** `03-diseno-visual.md` lo dejaba en `TBD`; Jeeliz vende como ventaja no mostrar la marca.
+- **Alternativas descartadas:** sin marca (queda como posible extra pago); marca en el botón (compite con la óptica).
+- **Consecuencias:** el texto final depende del nombre comercial (P-03). Hasta entonces el diseño reserva el espacio.
+
 ---
 
 ## Pendientes de decisión
